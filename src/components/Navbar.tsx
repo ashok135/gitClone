@@ -1,29 +1,17 @@
+import logoImg from '../assets/logo.png'
+
 export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/80 dark:bg-[#16171d]/80 backdrop-blur-md transition-colors duration-300">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
         
         {/* Left Side: Brand Logo */}
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-linear-to-tr from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/25">
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"
-              />
-            </svg>
-          </div>
-          <span className="bg-linear-to-r from-purple-600 to-indigo-600 bg-clip-text text-xl font-bold tracking-tight text-transparent dark:from-purple-400 dark:to-indigo-400">
-            gitClone
-          </span>
+        <div className="flex items-center">
+          <img
+            src={logoImg}
+            className="h-11 w-auto object-contain transition-transform duration-300 hover:scale-105"
+            alt="gitClone Logo"
+          />
         </div>
 
         {/* Right Side: GitHub Login Button */}
