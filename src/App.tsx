@@ -3,7 +3,7 @@ import { useAuth } from './hooks/useAuth';
 import { Navbar } from './components/Navbar';
 import { ImportRepo } from './components/ImportRepo';
 import { LinkImport } from './components/LinkImport';
-import { SandboxView } from './components/SandboxView';
+ 
 import type { Repo } from './components/ImportRepo';
 
 function App() {
@@ -13,13 +13,13 @@ function App() {
   const [fetchingRepos, setFetchingRepos] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [customRepoUrl, setCustomRepoUrl] = useState('');
-  const [deployingRepo, setDeployingRepo] = useState<Repo | null>(null);
+  const [importedRepoIds, setImportedRepoIds] = useState<number[]>([]);
 
   // Fetch GitHub repos once authenticated
   useEffect(() => {
     if (!user) {
       setRepos([]);
-      setDeployingRepo(null);
+      setImportedRepoIds([]);
       return;
     }
 
@@ -101,9 +101,9 @@ function App() {
     fetchRepos();
   }, [user]);
 
-  // When a repo is imported, go straight to SandboxView
+  // When a repo is imported, add its ID to the list of imported repos
   const handleImport = (repo: Repo) => {
-    setDeployingRepo(repo);
+    setImportedRepoIds((prev) => [...prev, repo.id]);
   };
 
   const handleCustomImport = () => {
@@ -122,9 +122,6 @@ function App() {
     handleImport(mockRepo);
   };
 
-  const handleBack = () => {
-    setDeployingRepo(null);
-  };
 
   return (
     <div
@@ -253,33 +250,29 @@ function App() {
                 </div>
               </div>
 
-              {deployingRepo ? (
-                <SandboxView repo={deployingRepo} onBack={handleBack} />
-              ) : (
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 320px',
-                    gap: '24px',
-                    alignItems: 'start',
-                  }}
-                >
-                  <ImportRepo
-                    user={user}
-                    repos={repos}
-                    fetchingRepos={fetchingRepos}
-                    searchQuery={searchQuery}
-                    onSearchChange={setSearchQuery}
-                    onImport={handleImport}
-                  />
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 320px',
+                  gap: '24px',
+                  alignItems: 'start',
+                }}
+              >
+                <ImportRepo
+                  user={user}
+                  repos={repos.filter((r) => !importedRepoIds.includes(r.id))}
+                  fetchingRepos={fetchingRepos}
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  onImport={handleImport}
+                />
 
-                  <LinkImport
-                    customRepoUrl={customRepoUrl}
-                    onUrlChange={setCustomRepoUrl}
-                    onImport={handleCustomImport}
-                  />
-                </div>
-              )}
+                <LinkImport
+                  customRepoUrl={customRepoUrl}
+                  onUrlChange={setCustomRepoUrl}
+                  onImport={handleCustomImport}
+                />
+              </div>
             </div>
           ) : (
             /* Logged-out hero */
