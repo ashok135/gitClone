@@ -3,7 +3,7 @@ import { useAuth } from './hooks/useAuth';
 import { Navbar } from './components/Navbar';
 import { ImportRepo } from './components/ImportRepo';
 import { LinkImport } from './components/LinkImport';
-import { DeploymentProgress } from './components/DeploymentProgress';
+import { SandboxView } from './components/SandboxView';
 import type { Repo } from './components/ImportRepo';
 
 function App() {
@@ -14,14 +14,12 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [customRepoUrl, setCustomRepoUrl] = useState('');
   const [deployingRepo, setDeployingRepo] = useState<Repo | null>(null);
-  const [deployStep, setDeployStep] = useState<number>(0);
 
   // Fetch GitHub repos once authenticated
   useEffect(() => {
     if (!user) {
       setRepos([]);
       setDeployingRepo(null);
-      setDeployStep(0);
       return;
     }
 
@@ -103,17 +101,9 @@ function App() {
     fetchRepos();
   }, [user]);
 
-  // Simulate Vercel-style staged deployment
+  // When a repo is imported, go straight to SandboxView
   const handleImport = (repo: Repo) => {
     setDeployingRepo(repo);
-    setDeployStep(1);
-    setTimeout(() => {
-      setDeployStep(2);
-      setTimeout(() => {
-        setDeployStep(3);
-        setTimeout(() => setDeployStep(4), 2000);
-      }, 2000);
-    }, 1500);
   };
 
   const handleCustomImport = () => {
@@ -134,7 +124,6 @@ function App() {
 
   const handleBack = () => {
     setDeployingRepo(null);
-    setDeployStep(0);
   };
 
   return (
@@ -265,14 +254,8 @@ function App() {
               </div>
 
               {deployingRepo ? (
-                /* Deployment progress view */
-                <DeploymentProgress
-                  repo={deployingRepo}
-                  step={deployStep}
-                  onBack={handleBack}
-                />
+                <SandboxView repo={deployingRepo} onBack={handleBack} />
               ) : (
-                /* Two-column import layout */
                 <div
                   style={{
                     display: 'grid',
@@ -281,7 +264,6 @@ function App() {
                     alignItems: 'start',
                   }}
                 >
-                  {/* Left: GitHub repo list */}
                   <ImportRepo
                     user={user}
                     repos={repos}
@@ -291,7 +273,6 @@ function App() {
                     onImport={handleImport}
                   />
 
-                  {/* Right: third-party URL import */}
                   <LinkImport
                     customRepoUrl={customRepoUrl}
                     onUrlChange={setCustomRepoUrl}

@@ -93,7 +93,7 @@ export function useAuth() {
     const redirectUri = `${API_URL}/api/auth/github/callback`;
     window.location.href = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(
       redirectUri
-    )}&scope=read:user`;
+    )}&scope=repo,read:user`;
   };
 
   const logout = () => {
