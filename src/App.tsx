@@ -3,6 +3,7 @@ import { useAuth } from './hooks/useAuth';
 import { Navbar } from './components/Navbar';
 import { ImportRepo } from './components/ImportRepo';
 import { LinkImport } from './components/LinkImport';
+import { getApiUrl } from './config/api';
  
 import type { Repo } from './components/ImportRepo';
 
@@ -27,7 +28,7 @@ function App() {
       setFetchingRepos(true);
       try {
         const token = localStorage.getItem('oauth_token');
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const apiUrl = getApiUrl();
 
         // --- Stage 1: Try our backend proxy ---
         let data: Repo[] | null = null;

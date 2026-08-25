@@ -1,11 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../store';
 import { setUser, setLoading, setError, logout as logoutAction } from '../store/slices/authSlice';
 import type { User } from '../types/auth';
+import { getApiUrl } from '../config/api';
 
 const GITHUB_CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID || "Ov23liwT45BuLxh6B0Df";
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export function useAuth() {
   const dispatch = useDispatch<AppDispatch>();
@@ -24,7 +24,10 @@ export function useAuth() {
     }
   }, [dispatch]);
 
-  // TODO: 2. Handle both redirect callback styles (Backend redirect vs Frontend direct)
+  // Prevent duplicate code exchanges (e.g. React StrictMode mounting twice)
+  const isExchangingRef = useRef(false);
+
+  // Handle both redirect callback styles (Backend redirect vs Frontend direct)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get("token");
@@ -47,11 +50,19 @@ export function useAuth() {
       }
     } else if (code) {
       // Flow B: Frontend-direct code exchange
+      if (isExchangingRef.current) return;
+      isExchangingRef.current = true;
+
+      // Clean the code from URL immediately so it cannot be used again
+      const cleanUrl = window.location.origin + window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+
       const exchangeCode = async () => {
         dispatch(setLoading(true));
         dispatch(setError(null));
         try {
-          const response = await fetch(`${API_URL}/api/auth/github`, {
+          const apiUrl = getApiUrl();
+          const response = await fetch(`${apiUrl}/api/auth/github`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -59,13 +70,12 @@ export function useAuth() {
             body: JSON.stringify({ code }),
           });
 
+          const data = await response.json();
+
           if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Failed to exchange authorization code");
+            throw new Error(data.description || data.error || "Failed to exchange authorization code");
           }
 
-          const data = await response.json() as { token: string; user: User };
-          
           localStorage.setItem("oauth_token", data.token);
           localStorage.setItem("oauth_user", JSON.stringify(data.user));
           
@@ -75,8 +85,6 @@ export function useAuth() {
           dispatch(setError(err.message || "Failed to log in with GitHub."));
         } finally {
           dispatch(setLoading(false));
-          const cleanUrl = window.location.origin + window.location.pathname;
-          window.history.replaceState({}, document.title, cleanUrl);
         }
       };
 
@@ -90,7 +98,8 @@ export function useAuth() {
       return;
     }
     // Redirect through the backend redirect callback URL registered in GitHub Developer settings
-    const redirectUri = `${API_URL}/api/auth/github/callback`;
+    const apiUrl = getApiUrl();
+    const redirectUri = `${apiUrl}/api/auth/github/callback`;
     window.location.href = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(
       redirectUri
     )}&scope=repo,read:user`;
