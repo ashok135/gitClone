@@ -3,9 +3,20 @@ import { useAuth } from './hooks/useAuth';
 import { Navbar } from './components/Navbar';
 import { ImportRepo } from './components/ImportRepo';
 import { LinkImport } from './components/LinkImport';
+import { DeploymentProgress } from './components/DeploymentProgress';
 import { getApiUrl } from './config/api';
  
 import type { Repo } from './components/ImportRepo';
+
+interface ActiveDeployment {
+  id: string;
+  repo: Repo;
+  step: number;
+  status: string;
+  url?: string;
+  error?: string;
+  logs: string[];
+}
 
 function App() {
   const { user, loading, error, setError, login, logout } = useAuth();
@@ -102,9 +113,114 @@ function App() {
     fetchRepos();
   }, [user]);
 
-  // When a repo is imported, add its ID to the list of imported repos
-  const handleImport = (repo: Repo) => {
+  const [activeDeployment, setActiveDeployment] = useState<ActiveDeployment | null>(null);
+
+  // Listen to real-time build & deployment progress via Server-Sent Events (SSE)
+  useEffect(() => {
+    if (!activeDeployment?.id || activeDeployment.step >= 4 || activeDeployment.step === -1) {
+      return;
+    }
+
+    const apiUrl = getApiUrl();
+    const eventSource = new EventSource(`${apiUrl}/api/project/stream/${activeDeployment.id}`);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        setActiveDeployment((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            step: data.step !== undefined ? data.step : prev.step,
+            status: data.status || prev.status,
+            url: data.url || prev.url,
+            error: data.error || prev.error,
+            logs: data.logs || prev.logs,
+          };
+        });
+
+        if (data.step === 4 || data.step === -1) {
+          eventSource.close();
+        }
+      } catch (err) {
+        console.error('Failed to parse SSE event:', err);
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      console.error('SSE connection error:', err);
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [activeDeployment?.id]);
+
+  // When a repo is imported, start deployment in backend
+  const handleImport = async (repo: Repo) => {
     setImportedRepoIds((prev) => [...prev, repo.id]);
+
+    // Switch view to DeploymentProgress immediately
+    setActiveDeployment({
+      id: '',
+      repo,
+      step: 1,
+      status: 'cloning',
+      logs: [`[${new Date().toLocaleTimeString()}] Triggering build for ${repo.name}...`],
+    });
+
+    try {
+      const token = localStorage.getItem('oauth_token');
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/api/project/run`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          repositoryUrl: repo.url,
+          repoName: repo.name,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setActiveDeployment((prev) =>
+          prev
+            ? {
+                ...prev,
+                id: data.deploymentId,
+                logs: data.logs || prev.logs,
+              }
+            : null
+        );
+      } else {
+        const errData = await res.json();
+        setActiveDeployment((prev) =>
+          prev
+            ? {
+                ...prev,
+                step: -1,
+                error: errData.error || 'Failed to start deployment',
+                logs: [...prev.logs, `❌ Server error: ${errData.error || 'Failed'}`],
+              }
+            : null
+        );
+      }
+    } catch (err: any) {
+      setActiveDeployment((prev) =>
+        prev
+          ? {
+              ...prev,
+              step: -1,
+              error: err.message || 'Could not connect to deployment server',
+              logs: [...prev.logs, `❌ Connection error: ${err.message}`],
+            }
+          : null
+      );
+    }
   };
 
   const handleCustomImport = () => {
@@ -251,29 +367,40 @@ function App() {
                 </div>
               </div>
 
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 320px',
-                  gap: '24px',
-                  alignItems: 'start',
-                }}
-              >
-                <ImportRepo
-                  user={user}
-                  repos={repos.filter((r) => !importedRepoIds.includes(r.id))}
-                  fetchingRepos={fetchingRepos}
-                  searchQuery={searchQuery}
-                  onSearchChange={setSearchQuery}
-                  onImport={handleImport}
+              {activeDeployment ? (
+                <DeploymentProgress
+                  repo={activeDeployment.repo}
+                  step={activeDeployment.step}
+                  url={activeDeployment.url}
+                  logs={activeDeployment.logs}
+                  error={activeDeployment.error}
+                  onBack={() => setActiveDeployment(null)}
                 />
+              ) : (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 320px',
+                    gap: '24px',
+                    alignItems: 'start',
+                  }}
+                >
+                  <ImportRepo
+                    user={user}
+                    repos={repos.filter((r) => !importedRepoIds.includes(r.id))}
+                    fetchingRepos={fetchingRepos}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    onImport={handleImport}
+                  />
 
-                <LinkImport
-                  customRepoUrl={customRepoUrl}
-                  onUrlChange={setCustomRepoUrl}
-                  onImport={handleCustomImport}
-                />
-              </div>
+                  <LinkImport
+                    customRepoUrl={customRepoUrl}
+                    onUrlChange={setCustomRepoUrl}
+                    onImport={handleCustomImport}
+                  />
+                </div>
+              )}
             </div>
           ) : (
             /* Logged-out hero */
