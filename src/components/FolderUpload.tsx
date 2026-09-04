@@ -1,11 +1,8 @@
 import React, { useState, useRef } from 'react';
 import JSZip from 'jszip';
 
-export interface UploadedFilePayload {
-  path: string;
-  content: string;
-  encoding?: 'utf8' | 'base64';
-}
+import type { UploadedFilePayload } from '../types/upload';
+export type { UploadedFilePayload };
 
 interface FolderUploadProps {
   onDeployFiles: (repoName: string, files: UploadedFilePayload[], envVars?: string) => Promise<void>;
