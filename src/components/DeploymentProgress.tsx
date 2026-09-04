@@ -173,7 +173,7 @@ export function DeploymentProgress({
   detectedEnv,
   onStop,
 }: DeploymentProgressProps) {
-  const [showLogs, setShowLogs] = useState(false);
+  const [showLogs, setShowLogs] = useState(true);
   const [stopping, setStopping] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [viewport, setViewport] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
@@ -823,6 +823,48 @@ export function DeploymentProgress({
             </div>
           </div>
 
+          {/* HTTPS Mixed Content Alert Banner if browser restricts HTTP iframe */}
+          {typeof window !== 'undefined' && window.location.protocol === 'https:' && sandboxUrl.startsWith('http://') && (
+            <div
+              style={{
+                background: 'rgba(234, 179, 8, 0.08)',
+                borderBottom: '1px solid rgba(234, 179, 8, 0.2)',
+                padding: '10px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '10px',
+                fontSize: '12px',
+                color: '#fde047',
+              }}
+            >
+              <span>
+                🔒 <strong>Browser Security Note:</strong> This dashboard is served via HTTPS. If the preview below is blocked by your browser, open it directly in a new tab:
+              </span>
+              <a
+                href={sandboxUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  background: '#eab308',
+                  color: '#000',
+                  border: 'none',
+                  borderRadius: '5px',
+                  padding: '5px 12px',
+                  fontSize: '11.5px',
+                  fontWeight: '700',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <span>Open in New Tab ↗</span>
+              </a>
+            </div>
+          )}
+
           {/* Iframe Viewport Area */}
           <div
             style={{
@@ -846,6 +888,7 @@ export function DeploymentProgress({
                 boxShadow: viewport === 'desktop' ? 'none' : '0 15px 40px rgba(0,0,0,0.9)',
                 border: viewport === 'desktop' ? 'none' : '2px solid #333',
                 background: '#fff',
+                position: 'relative',
                 transition: 'width 0.3s ease',
               }}
             >
@@ -1072,7 +1115,7 @@ export function DeploymentProgress({
           <div
             style={{
               padding: '12px 14px',
-              maxHeight: '200px',
+              maxHeight: '340px',
               overflowY: 'auto',
               fontFamily: 'SFMono-Regular, Menlo, Monaco, Consolas, monospace',
               fontSize: '11.5px',
