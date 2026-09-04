@@ -3,11 +3,14 @@ import type { Repo } from './ImportRepo';
 
 export interface DeploymentProgressProps {
   repo: Repo;
-  step: number; // 0=Idle, 1=Cloning, 2=Building, 3=Starting, 4=Live, -1=Failed
+  step: number; // 0=Idle, 1=Cloning, 2=Installing, 3=Starting, 4=Live, <0=Failed, -99=Terminated
+  status?: string;
   onBack: () => void;
   logs?: string[];
   url?: string;
   error?: string;
+  expiresAt?: string;
+  onStop?: () => Promise<void> | void;
 }
 
 type StepStatus = 'idle' | 'active' | 'done' | 'failed';
@@ -138,17 +141,23 @@ const STEPS = [
 export function DeploymentProgress({
   repo,
   step,
+  status,
   onBack,
   logs = [],
   url,
   error,
+  expiresAt,
+  onStop,
 }: DeploymentProgressProps) {
   const [showLogs, setShowLogs] = useState(true);
+  const [stopping, setStopping] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
-  const isFailed = step < 0 || !!error;
-  const isLive = step >= 4 && !isFailed;
-  const progress = isFailed ? 100 : Math.min((Math.max(step, 0) / 4) * 100, 100);
+  const isTerminated = step === -99 || status === 'stopped' || status === 'expired';
+  const isFailed = (step < 0 && !isTerminated) || !!error;
+  const isLive = step >= 4 && !isFailed && !isTerminated;
+  const progress = isFailed || isTerminated ? 100 : Math.min((Math.max(step, 0) / 4) * 100, 100);
 
   // Auto-scroll logs
   useEffect(() => {
@@ -158,6 +167,7 @@ export function DeploymentProgress({
   }, [logs, showLogs]);
 
   const getStepStatus = (stepIndex: number): StepStatus => {
+    if (isTerminated) return 'idle';
     if (isFailed) {
       if (stepIndex === Math.abs(step)) return 'failed';
       if (stepIndex < Math.abs(step)) return 'done';
@@ -216,8 +226,33 @@ export function DeploymentProgress({
           </h3>
         </div>
 
-        {/* Live / Building / Failed badge */}
-        {isLive ? (
+        {/* Live / Terminated / Building / Failed badge */}
+        {isTerminated ? (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid #333',
+              borderRadius: '999px',
+              padding: '5px 12px',
+            }}
+          >
+            <span
+              style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                background: '#888',
+                display: 'inline-block',
+              }}
+            />
+            <span style={{ fontSize: '11px', fontWeight: '700', color: '#ccc' }}>
+              {status === 'expired' ? 'Auto-Expired & Cleaned' : 'Stopped & Cleaned'}
+            </span>
+          </div>
+        ) : isLive ? (
           <div
             style={{
               display: 'flex',
@@ -371,58 +406,201 @@ export function DeploymentProgress({
             gap: '16px',
           }}
         >
-          <div>
-            <p
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <p
+                style={{
+                  fontSize: '11px',
+                  color: '#555',
+                  margin: '0 0 4px 0',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                Live Sandbox URL
+              </p>
+              <a
+                href={sandboxUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  fontSize: '14px',
+                  color: '#4ade80',
+                  textDecoration: 'none',
+                  fontWeight: '600',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+                onMouseEnter={(e) =>
+                  ((e.currentTarget as HTMLAnchorElement).style.textDecoration = 'underline')
+                }
+                onMouseLeave={(e) =>
+                  ((e.currentTarget as HTMLAnchorElement).style.textDecoration = 'none')
+                }
+              >
+                <span>{sandboxUrl}</span>
+                <span style={{ fontSize: '12px' }}>↗</span>
+              </a>
+            </div>
+
+            {/* Option 2: Auto-expire TTL pill */}
+            <div
               style={{
-                fontSize: '11px',
-                color: '#555',
-                margin: '0 0 4px 0',
-                fontWeight: '600',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-              }}
-            >
-              Live Sandbox URL
-            </p>
-            <a
-              href={sandboxUrl}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                fontSize: '14px',
-                color: '#4ade80',
-                textDecoration: 'none',
-                fontWeight: '600',
-                display: 'inline-flex',
+                display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-              }}
-              onMouseEnter={(e) =>
-                ((e.currentTarget as HTMLAnchorElement).style.textDecoration = 'underline')
-              }
-              onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLAnchorElement).style.textDecoration = 'none')
-              }
-            >
-              <span>{sandboxUrl}</span>
-              <span style={{ fontSize: '12px' }}>↗</span>
-            </a>
-          </div>
-          <div>
-            <p
-              style={{
+                gap: '5px',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid #222',
+                padding: '4px 10px',
+                borderRadius: '6px',
                 fontSize: '11px',
-                color: '#555',
-                margin: '0 0 4px 0',
-                fontWeight: '600',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
+                color: '#888',
               }}
+              title={expiresAt ? `Expires at ${new Date(expiresAt).toLocaleTimeString()}` : 'Auto-expires in 60 minutes to reclaim VM disk'}
             >
-              Branch & Source
-            </p>
-            <span style={{ fontSize: '13px', color: '#aaa' }}>main • {repo.fullName}</span>
+              <span>⏳</span>
+              <span>
+                {expiresAt
+                  ? `Expires: ${new Date(expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                  : 'TTL: 60m Auto-Clean'}
+              </span>
+            </div>
           </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <p
+                style={{
+                  fontSize: '11px',
+                  color: '#555',
+                  margin: '0 0 4px 0',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                Branch & Source
+              </p>
+              <span style={{ fontSize: '13px', color: '#aaa' }}>main • {repo.fullName}</span>
+            </div>
+
+            {/* Option 3: Stop & Delete Sandbox button */}
+            <div>
+              {!confirmDelete ? (
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(true)}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid rgba(239,68,68,0.3)',
+                    color: '#f87171',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(239,68,68,0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  🛑 Stop & Delete Sandbox
+                </button>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    type="button"
+                    disabled={stopping}
+                    onClick={async () => {
+                      setStopping(true);
+                      try {
+                        if (onStop) await onStop();
+                      } finally {
+                        setStopping(false);
+                        setConfirmDelete(false);
+                      }
+                    }}
+                    style={{
+                      background: '#ef4444',
+                      border: 'none',
+                      color: '#fff',
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      cursor: stopping ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {stopping ? 'Stopping...' : 'Confirm: Free Port & Delete Disk'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(false)}
+                    style={{
+                      background: '#1a1a1a',
+                      border: '1px solid #333',
+                      color: '#aaa',
+                      padding: '6px 10px',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Terminated State Card */}
+      {isTerminated && (
+        <div
+          style={{
+            borderRadius: '8px',
+            border: '1px solid #222',
+            background: 'rgba(255,255,255,0.02)',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '18px' }}>🧹</span>
+            <h4 style={{ margin: 0, fontSize: '15px', color: '#fff', fontWeight: '600' }}>
+              {status === 'expired' ? 'Sandbox Auto-Expired' : 'Sandbox Terminated & Disk Cleaned'}
+            </h4>
+          </div>
+          <p style={{ margin: 0, fontSize: '13px', color: '#888', lineHeight: '1.5' }}>
+            The preview server was stopped, the isolated port was freed, and the cloned directory was permanently deleted from your Oracle VM disk.
+          </p>
+          <button
+            type="button"
+            onClick={onBack}
+            style={{
+              alignSelf: 'flex-start',
+              background: '#1a1a1a',
+              border: '1px solid #333',
+              color: '#fff',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              marginTop: '4px',
+            }}
+          >
+            ← Back to Repositories
+          </button>
         </div>
       )}
 

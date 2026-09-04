@@ -16,6 +16,7 @@ interface ActiveDeployment {
   url?: string;
   error?: string;
   logs: string[];
+  expiresAt?: string;
 }
 
 function App() {
@@ -137,9 +138,10 @@ function App() {
               ...prev,
               step: data.step !== undefined ? data.step : prev.step,
               status: data.status || prev.status,
-              url: data.url || prev.url,
+              url: data.url !== undefined ? data.url : prev.url,
               error: data.error || prev.error,
               logs: data.logs || prev.logs,
+              expiresAt: data.expiresAt || prev.expiresAt,
             };
           });
 
@@ -172,9 +174,10 @@ function App() {
               ...prev,
               step: data.step !== undefined ? data.step : prev.step,
               status: data.status || prev.status,
-              url: data.url || prev.url,
+              url: data.url !== undefined ? data.url : prev.url,
               error: data.error || prev.error,
               logs: data.logs && data.logs.length > (prev.logs?.length || 0) ? data.logs : prev.logs,
+              expiresAt: data.expiresAt || prev.expiresAt,
             };
           });
 
@@ -275,6 +278,29 @@ function App() {
       updatedAt: new Date().toISOString(),
     };
     handleImport(mockRepo);
+  };
+
+  const handleStopDeployment = async () => {
+    if (!activeDeployment?.id) return;
+    try {
+      const apiUrl = getApiUrl();
+      await fetch(`${apiUrl}/api/project/stop/${activeDeployment.id}`, {
+        method: 'POST',
+      });
+      setActiveDeployment((prev) =>
+        prev
+          ? {
+              ...prev,
+              step: -99,
+              status: 'stopped',
+              url: undefined,
+              logs: [...prev.logs, '🛑 Sandbox stopped and files deleted from VM disk.'],
+            }
+          : null
+      );
+    } catch (e: any) {
+      console.error('Failed to stop sandbox:', e);
+    }
   };
 
 
@@ -409,10 +435,13 @@ function App() {
                 <DeploymentProgress
                   repo={activeDeployment.repo}
                   step={activeDeployment.step}
+                  status={activeDeployment.status}
                   url={activeDeployment.url}
                   logs={activeDeployment.logs}
                   error={activeDeployment.error}
+                  expiresAt={activeDeployment.expiresAt}
                   onBack={() => setActiveDeployment(null)}
+                  onStop={handleStopDeployment}
                 />
               ) : (
                 <div
