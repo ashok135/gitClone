@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronRight,
   Zap,
+  FileCode,
 } from 'lucide-react';
 export type { UploadedFilePayload };
 
@@ -51,6 +52,7 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
 
   const folderInputRef = useRef<HTMLInputElement>(null);
   const zipInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B';
@@ -242,15 +244,11 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
           <FolderUp size={18} color="#60a5fa" />
           <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#fff' }}>
-            Upload Project Folder or .ZIP
+            Upload HTML File, Project Folder, or .ZIP
           </h3>
         </div>
         <p style={{ margin: 0, fontSize: '13px', color: '#888', lineHeight: 1.5 }}>
-          Deploy full-stack frontends directly from your local machine. Automatically filters out heavy{' '}
-          <code style={{ color: '#aaa', background: '#161616', padding: '1px 5px', borderRadius: '4px' }}>
-            node_modules/
-          </code>{' '}
-          so uploads are lightweight and blazing fast.
+          Deploy simple HTML files, full-stack frontends, or static websites directly from your computer. Simple HTML pages go live instantly with zero configuration!
         </p>
       </div>
 
@@ -271,6 +269,14 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
         accept=".zip"
         style={{ display: 'none' }}
         onChange={handleZipChange}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".html,.htm,.css,.js,.svg,.png,.jpg,.jpeg,.json"
+        multiple
+        style={{ display: 'none' }}
+        onChange={handleFolderChange}
       />
 
       {/* Drop zone */}
@@ -318,14 +324,34 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
 
         <div>
           <div style={{ fontSize: '14px', fontWeight: 600, color: '#eee', marginBottom: '4px' }}>
-            {reading ? 'Reading & optimizing project files...' : 'Drag & Drop Folder or .ZIP here'}
+            {reading ? 'Reading & optimizing project files...' : 'Drag & Drop HTML File, Folder, or .ZIP here'}
           </div>
           <div style={{ fontSize: '12px', color: '#666' }}>
             or choose a selection method below:
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', gap: '10px', marginTop: '6px', flexWrap: 'wrap', justifyContent: 'center' }} onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              background: '#1f1f1f',
+              border: '1px solid #333',
+              color: '#fff',
+              padding: '7px 14px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: 500,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <FileCode size={14} color="#60a5fa" />
+            <span>Select HTML / Files</span>
+          </button>
           <button
             type="button"
             onClick={() => folderInputRef.current?.click()}
