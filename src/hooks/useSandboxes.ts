@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { type SandboxItem } from '../types/sandbox';
+import type { SandboxItem } from '../types/sandbox';
 import { ProjectApi } from '../services/api/projectApi';
 
 const STORAGE_KEY = 'mini_vercel_sandboxes';
@@ -20,8 +20,29 @@ export function useSandboxes() {
     try {
       const remote = await ProjectApi.fetchSandboxes();
       if (remote && remote.length > 0) {
-        setSandboxes(remote);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(remote));
+        // Merge remote sandboxes with locally cached sandboxes
+        setSandboxes((prev) => {
+          const map = new Map<string, SandboxItem>();
+          // Put local items first
+          prev.forEach((s) => map.set(s.id, s));
+          // Merge/overwrite with remote items
+          remote.forEach((s) => {
+            const existing = map.get(s.id);
+            map.set(s.id, {
+              ...existing,
+              ...s,
+              url: s.url || existing?.url || null,
+              port: s.port || existing?.port,
+              expiresAt: s.expiresAt || existing?.expiresAt,
+            });
+          });
+
+          const merged = Array.from(map.values()).sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          return merged;
+        });
       }
     } catch (e) {
       console.error('Failed to refresh sandboxes:', e);
@@ -36,8 +57,17 @@ export function useSandboxes() {
 
   const recordSandbox = useCallback((sandbox: SandboxItem) => {
     setSandboxes((prev) => {
+      const existing = prev.find((s) => s.id === sandbox.id);
+      const merged: SandboxItem = {
+        ...existing,
+        ...sandbox,
+        url: sandbox.url || existing?.url || null,
+        port: sandbox.port || existing?.port,
+        expiresAt: sandbox.expiresAt || existing?.expiresAt,
+        detectedEnv: sandbox.detectedEnv || existing?.detectedEnv,
+      };
       const filtered = prev.filter((s) => s.id !== sandbox.id);
-      const updated = [sandbox, ...filtered];
+      const updated = [merged, ...filtered];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       return updated;
     });

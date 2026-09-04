@@ -17,11 +17,19 @@ import { FolderUpload } from './components/FolderUpload';
 import { LiveWebsitesTab } from './components/LiveWebsitesTab';
 import { DeploymentProgress } from './components/DeploymentProgress';
 
+import { Globe } from 'lucide-react';
 import type { Repo } from './types/repo';
 
 function App() {
   const { user, loading, error, setError, login, logout } = useAuth();
-  const [mainTab, setMainTab] = useState<'deploy' | 'live'>('deploy');
+  const [mainTab, setMainTab] = useState<'deploy' | 'live'>(() => {
+    try {
+      const saved = localStorage.getItem('mini_vercel_active_tab');
+      return saved === 'live' ? 'live' : 'deploy';
+    } catch {
+      return 'deploy';
+    }
+  });
   const [deployMode, setDeployMode] = useState<'git' | 'folder'>('git');
 
   // Sandboxes management hook
@@ -123,6 +131,9 @@ function App() {
                   activeTab={mainTab}
                   onSelectTab={(tab) => {
                     setMainTab(tab);
+                    try {
+                      localStorage.setItem('mini_vercel_active_tab', tab);
+                    } catch {}
                     setActiveDeployment(null);
                     if (tab === 'live') refreshSandboxes();
                   }}
@@ -172,11 +183,76 @@ function App() {
                   onRefresh={refreshSandboxes}
                   onStop={stopSandbox}
                   onViewLogs={viewSandboxLogs}
-                  onGoToDeploy={() => setMainTab('deploy')}
+                  onGoToDeploy={() => {
+                    setMainTab('deploy');
+                    try {
+                      localStorage.setItem('mini_vercel_active_tab', 'deploy');
+                    } catch {}
+                  }}
                 />
               ) : (
                 /* View 3: Deploy Project Area */
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {/* Alert banner if user has active sandboxes running while on Deploy tab */}
+                  {activeCount > 0 && (
+                    <div
+                      style={{
+                        background:
+                          'linear-gradient(90deg, rgba(16,185,129,0.12), rgba(59,130,246,0.12))',
+                        border: '1px solid rgba(16,185,129,0.35)',
+                        borderRadius: '10px',
+                        padding: '12px 18px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '12px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span
+                          style={{
+                            width: '9px',
+                            height: '9px',
+                            borderRadius: '50%',
+                            background: '#10b981',
+                            boxShadow: '0 0 10px #10b981',
+                            display: 'inline-block',
+                          }}
+                        />
+                        <span style={{ fontSize: '13px', color: '#e4e4e4', fontWeight: 500 }}>
+                          You have <strong>{activeCount}</strong> live sandbox website
+                          {activeCount > 1 ? 's' : ''} running right now.
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setMainTab('live');
+                          try {
+                            localStorage.setItem('mini_vercel_active_tab', 'live');
+                          } catch {}
+                          refreshSandboxes();
+                        }}
+                        style={{
+                          background: '#10b981',
+                          color: '#000',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '6px 14px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <Globe size={13} />
+                        <span>View Live Websites →</span>
+                      </button>
+                    </div>
+                  )}
+
                   <DeploySubTabs mode={deployMode} onSelectMode={setDeployMode} />
 
                   {deployMode === 'git' ? (

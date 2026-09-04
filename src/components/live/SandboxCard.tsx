@@ -31,10 +31,15 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const isLive = sandbox.status === 'live';
+  const liveUrl =
+    sandbox.url ||
+    (sandbox.port
+      ? `http://${window.location.hostname !== 'localhost' ? window.location.hostname : '129.225.66.172'}:${sandbox.port}`
+      : null);
 
   const handleCopy = () => {
-    if (!sandbox.url) return;
-    navigator.clipboard.writeText(sandbox.url);
+    if (!liveUrl) return;
+    navigator.clipboard.writeText(liveUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -177,7 +182,7 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
       </div>
 
       {/* URL Bar if Live */}
-      {isLive && sandbox.url && (
+      {isLive && liveUrl && (
         <div
           style={{
             display: 'flex',
@@ -207,7 +212,7 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
               }}
             />
             <a
-              href={sandbox.url}
+              href={liveUrl}
               target="_blank"
               rel="noreferrer"
               style={{
@@ -220,7 +225,7 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
                 whiteSpace: 'nowrap',
               }}
             >
-              {sandbox.url}
+              {liveUrl}
             </a>
           </div>
 
@@ -256,10 +261,10 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
           paddingTop: '12px',
         }}
       >
-        {isLive && sandbox.url && (
+        {isLive && liveUrl && (
           <>
             <a
-              href={sandbox.url}
+              href={liveUrl}
               target="_blank"
               rel="noreferrer"
               style={{
@@ -281,7 +286,7 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
             </a>
 
             <button
-              onClick={() => onInspect(sandbox.url!)}
+              onClick={() => onInspect(liveUrl)}
               style={{
                 background: '#1a1a1a',
                 border: '1px solid #333',
