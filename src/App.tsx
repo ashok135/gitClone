@@ -66,12 +66,19 @@ function App() {
     markAsImported,
   } = useGithubRepos(user);
 
-  const handleGitImport = async (repo: Repo) => {
+  const handleGitImport = async (
+    repo: Repo,
+    rootDir?: string,
+    projectType?: 'frontend' | 'backend' | 'auto'
+  ) => {
     markAsImported(repo.id);
-    await startGitDeploy(repo);
+    await startGitDeploy(repo, undefined, rootDir, projectType);
   };
 
-  const handleCustomGitImport = async () => {
+  const handleCustomGitImport = async (
+    rootDir?: string,
+    projectType?: 'frontend' | 'backend' | 'auto'
+  ) => {
     if (!customRepoUrl.trim()) return;
     const parts = customRepoUrl.trim().split('/');
     const repoName = parts[parts.length - 1] || 'custom-repo';
@@ -84,7 +91,7 @@ function App() {
       description: 'Third-party repository import',
       updatedAt: new Date().toISOString(),
     };
-    await startGitDeploy(mockRepo);
+    await startGitDeploy(mockRepo, undefined, rootDir, projectType);
   };
 
   return (

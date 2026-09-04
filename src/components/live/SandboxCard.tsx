@@ -137,6 +137,40 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
                 {sandbox.isUpload ? 'Folder Upload' : 'Git Repo'}
               </span>
 
+              {sandbox.rootDir && (
+                <span
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 600,
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    background: 'rgba(99,102,241,0.15)',
+                    color: '#a5b4fc',
+                    border: '1px solid rgba(99,102,241,0.3)',
+                    fontFamily: 'monospace',
+                  }}
+                >
+                  /{sandbox.rootDir}
+                </span>
+              )}
+
+              {sandbox.isBackend && (
+                <span
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 600,
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    background: 'rgba(234,88,12,0.15)',
+                    color: '#fb923c',
+                    border: '1px solid rgba(234,88,12,0.3)',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Backend API
+                </span>
+              )}
+
               <span
                 style={{
                   fontSize: '10px',
@@ -293,8 +327,8 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
               target="_blank"
               rel="noreferrer"
               style={{
-                background: '#fff',
-                color: '#000',
+                background: sandbox.isBackend ? '#ea580c' : '#fff',
+                color: sandbox.isBackend ? '#fff' : '#000',
                 border: 'none',
                 borderRadius: '6px',
                 padding: '6px 14px',
@@ -307,28 +341,36 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
               }}
             >
               <ExternalLink size={13} />
-              <span>Open Website</span>
+              <span>{sandbox.isBackend ? 'Open API Endpoint ↗' : 'Open Website'}</span>
             </a>
 
-            <button
-              onClick={() => onInspect(liveUrl)}
-              style={{
-                background: '#1a1a1a',
-                border: '1px solid #333',
-                color: '#fff',
-                borderRadius: '6px',
-                padding: '6px 14px',
-                fontSize: '12px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-            >
-              <MonitorSmartphone size={13} />
-              <span>Inspect Viewport</span>
-            </button>
+            {!sandbox.isBackend && (
+              <button
+                onClick={() => onInspect(liveUrl)}
+                style={{
+                  background: '#1a1a1a',
+                  border: '1px solid #333',
+                  color: '#fff',
+                  borderRadius: '6px',
+                  padding: '6px 14px',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={(e) =>
+                  ((e.currentTarget as HTMLButtonElement).style.background = '#252525')
+                }
+                onMouseLeave={(e) =>
+                  ((e.currentTarget as HTMLButtonElement).style.background = '#1a1a1a')
+                }
+              >
+                <MonitorSmartphone size={13} color="#bbb" />
+                <span>Inspect Viewport</span>
+              </button>
+            )}
           </>
         )}
 

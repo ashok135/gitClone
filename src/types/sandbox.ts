@@ -7,6 +7,9 @@ export interface SandboxItem {
   step?: number;
   port?: number;
   url?: string | null;
+  rootDir?: string;
+  isBackend?: boolean;
+  projectType?: 'frontend' | 'backend' | 'auto';
   createdAt: string;
   expiresAt?: string;
   ttlMinutes?: number;

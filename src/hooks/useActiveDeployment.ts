@@ -106,40 +106,56 @@ export function useActiveDeployment({ onSandboxUpdate }: UseActiveDeploymentOpti
     };
   }, [activeDeployment?.id, onSandboxUpdate]);
 
-  const startGitDeploy = useCallback(async (repo: Repo) => {
-    setActiveDeployment({
-      id: '',
-      repo,
-      step: 1,
-      status: 'cloning',
-      logs: [`[${new Date().toLocaleTimeString()}] Triggering build for ${repo.name}...`],
-    });
+  const startGitDeploy = useCallback(
+    async (
+      repo: Repo,
+      envVars?: any,
+      rootDir?: string,
+      projectType?: 'frontend' | 'backend' | 'auto'
+    ) => {
+      setActiveDeployment({
+        id: '',
+        repo,
+        step: 1,
+        status: 'cloning',
+        rootDir,
+        projectType,
+        logs: [`[${new Date().toLocaleTimeString()}] Triggering build for ${repo.name}...`],
+      });
 
-    try {
-      const res = await ProjectApi.triggerGitDeploy(repo.url, repo.name);
-      if (res.ok) {
-        setActiveDeployment((prev) =>
-          prev
-            ? {
-                ...prev,
-                id: res.data.deploymentId,
-                logs: res.data.logs || prev.logs,
-              }
-            : null
+      try {
+        const res = await ProjectApi.triggerGitDeploy(
+          repo.url,
+          repo.name,
+          envVars,
+          rootDir,
+          projectType
         );
+        if (res.ok) {
+          setActiveDeployment((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  id: res.data.deploymentId,
+                  logs: res.data.logs || prev.logs,
+                }
+              : null
+          );
 
-        if (onSandboxUpdate) {
-          onSandboxUpdate({
-            id: res.data.deploymentId,
-            repoName: repo.name,
-            repoUrl: repo.url,
-            isUpload: false,
-            status: 'cloning',
-            step: 1,
-            createdAt: new Date().toISOString(),
-          });
-        }
-      } else {
+          if (onSandboxUpdate) {
+            onSandboxUpdate({
+              id: res.data.deploymentId,
+              repoName: repo.name,
+              repoUrl: repo.url,
+              rootDir,
+              projectType,
+              isUpload: false,
+              status: 'cloning',
+              step: 1,
+              createdAt: new Date().toISOString(),
+            });
+          }
+        } else {
         setActiveDeployment((prev) =>
           prev
             ? {

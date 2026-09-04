@@ -11,12 +11,18 @@ export class ProjectApi {
     };
   }
 
-  static async triggerGitDeploy(repositoryUrl: string, repoName?: string, envVars?: any) {
+  static async triggerGitDeploy(
+    repositoryUrl: string,
+    repoName?: string,
+    envVars?: any,
+    rootDir?: string,
+    projectType?: string
+  ) {
     const apiUrl = getApiUrl();
     const res = await fetch(`${apiUrl}/api/project/run`, {
       method: 'POST',
       headers: this.getHeaders(),
-      body: JSON.stringify({ repositoryUrl, repoName, envVars }),
+      body: JSON.stringify({ repositoryUrl, repoName, envVars, rootDir, projectType }),
     });
     const data = await res.json();
     return { ok: res.ok, status: res.status, data };

@@ -1,5 +1,14 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import type { User } from '../types/auth';
+import { FolderTree, ChevronDown, ChevronUp, Globe, Cpu } from 'lucide-react';
+
+const ROOT_PRESETS = [
+  { label: './ (Root)', value: '' },
+  { label: 'frontend', value: 'frontend' },
+  { label: 'backend', value: 'backend' },
+  { label: 'client', value: 'client' },
+  { label: 'server', value: 'server' },
+];
 
 export interface Repo {
   id: number;
@@ -17,7 +26,7 @@ interface ImportRepoProps {
   fetchingRepos: boolean;
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  onImport: (repo: Repo) => void;
+  onImport: (repo: Repo, rootDir?: string, projectType?: 'frontend' | 'backend' | 'auto') => void;
 }
 
 function relativeTime(dateStr: string): string {
@@ -87,6 +96,9 @@ export function ImportRepo({
   onImport,
 }: ImportRepoProps) {
   const [showAll, setShowAll] = useState(false);
+  const [configuringRepoId, setConfiguringRepoId] = useState<number | null>(null);
+  const [repoRootDirs, setRepoRootDirs] = useState<Record<number, string>>({});
+  const [repoProjectTypes, setRepoProjectTypes] = useState<Record<number, 'frontend' | 'backend' | 'auto'>>({});
 
   const filteredRepos = repos.filter((repo) =>
     repo.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -211,25 +223,34 @@ export function ImportRepo({
             {visibleRepos.map((repo, idx) => {
               const badge = getBadgeColor(repo.name);
               const initials = getBadgeInitials(repo.name);
+              const isConfiguring = configuringRepoId === repo.id;
+              const selectedRootDir = repoRootDirs[repo.id] || '';
+              const selectedType = repoProjectTypes[repo.id] || 'auto';
               return (
                 <div
                   key={repo.id}
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '14px 18px',
+                    flexDirection: 'column',
                     borderTop: idx === 0 ? 'none' : '1px solid #1a1a1a',
-                    transition: 'background 0.15s',
-                    cursor: 'default',
                   }}
-                  onMouseEnter={(e) =>
-                    ((e.currentTarget as HTMLDivElement).style.background = '#111')
-                  }
-                  onMouseLeave={(e) =>
-                    ((e.currentTarget as HTMLDivElement).style.background = 'transparent')
-                  }
                 >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '14px 18px',
+                      transition: 'background 0.15s',
+                      cursor: 'default',
+                    }}
+                    onMouseEnter={(e) =>
+                      ((e.currentTarget as HTMLDivElement).style.background = '#111')
+                    }
+                    onMouseLeave={(e) =>
+                      ((e.currentTarget as HTMLDivElement).style.background = 'transparent')
+                    }
+                  >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div
                       style={{
@@ -278,35 +299,191 @@ export function ImportRepo({
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => onImport(repo)}
-                    style={{
-                      background: '#fff',
-                      color: '#000',
-                      border: 'none',
-                      borderRadius: '7px',
-                      padding: '6px 16px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                      transition: 'background 0.15s, transform 0.1s',
-                    }}
-                    onMouseEnter={(e) =>
-                      ((e.currentTarget as HTMLButtonElement).style.background = '#e5e5e5')
-                    }
-                    onMouseLeave={(e) =>
-                      ((e.currentTarget as HTMLButtonElement).style.background = '#fff')
-                    }
-                    onMouseDown={(e) =>
-                      ((e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.95)')
-                    }
-                    onMouseUp={(e) =>
-                      ((e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)')
-                    }
-                  >
-                    Import
-                  </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setConfiguringRepoId((prev) => (prev === repo.id ? null : repo.id))
+                        }
+                        title="Configure Root Directory (Monorepo Settings)"
+                        style={{
+                          background: isConfiguring ? '#222' : '#141414',
+                          border: isConfiguring ? '1px solid #444' : '1px solid #282828',
+                          borderRadius: '7px',
+                          padding: '6px 9px',
+                          fontSize: '11.5px',
+                          color: isConfiguring ? '#60a5fa' : '#888',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        <FolderTree size={13} color={selectedRootDir ? '#60a5fa' : '#888'} />
+                        {selectedRootDir ? (
+                          <span style={{ fontWeight: 600, color: '#60a5fa' }}>/{selectedRootDir}</span>
+                        ) : null}
+                        {isConfiguring ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          onImport(
+                            repo,
+                            selectedRootDir.trim() || undefined,
+                            selectedType
+                          )
+                        }
+                        style={{
+                          background: '#fff',
+                          color: '#000',
+                          border: 'none',
+                          borderRadius: '7px',
+                          padding: '6px 16px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          flexShrink: 0,
+                          transition: 'background 0.15s, transform 0.1s',
+                        }}
+                        onMouseEnter={(e) =>
+                          ((e.currentTarget as HTMLButtonElement).style.background = '#e5e5e5')
+                        }
+                        onMouseLeave={(e) =>
+                          ((e.currentTarget as HTMLButtonElement).style.background = '#fff')
+                        }
+                        onMouseDown={(e) =>
+                          ((e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.95)')
+                        }
+                        onMouseUp={(e) =>
+                          ((e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)')
+                        }
+                      >
+                        Import {selectedRootDir ? `(${selectedRootDir})` : ''}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Collapsible Root Directory & Monorepo Panel for this repo */}
+                  {isConfiguring && (
+                    <div
+                      style={{
+                        background: '#0d0d0d',
+                        borderTop: '1px solid #1f1f1f',
+                        padding: '12px 18px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#aaa', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <FolderTree size={13} color="#3b82f6" />
+                          Root Directory & Subfolder Settings
+                        </span>
+                        <span style={{ fontSize: '11px', color: '#666' }}>Select or enter the subfolder to deploy</span>
+                      </div>
+
+                      {/* Preset Chips */}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {ROOT_PRESETS.map((preset) => {
+                          const isSelected = selectedRootDir === preset.value;
+                          return (
+                            <button
+                              key={preset.label}
+                              type="button"
+                              onClick={() =>
+                                setRepoRootDirs((prev) => ({
+                                  ...prev,
+                                  [repo.id]: preset.value,
+                                }))
+                              }
+                              style={{
+                                background: isSelected ? '#3b82f6' : '#161616',
+                                color: isSelected ? '#fff' : '#aaa',
+                                border: isSelected ? '1px solid #3b82f6' : '1px solid #282828',
+                                borderRadius: '5px',
+                                padding: '3px 8px',
+                                fontSize: '11px',
+                                cursor: 'pointer',
+                                fontWeight: isSelected ? 600 : 400,
+                              }}
+                            >
+                              {preset.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Custom subpath input & target type */}
+                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        <div style={{ flex: 1, minWidth: '180px' }}>
+                          <input
+                            type="text"
+                            placeholder="Custom subfolder (e.g. apps/web or packages/api)"
+                            value={selectedRootDir}
+                            onChange={(e) =>
+                              setRepoRootDirs((prev) => ({
+                                ...prev,
+                                [repo.id]: e.target.value,
+                              }))
+                            }
+                            style={{
+                              width: '100%',
+                              background: '#141414',
+                              border: '1px solid #2a2a2a',
+                              borderRadius: '6px',
+                              padding: '6px 10px',
+                              fontSize: '11.5px',
+                              color: '#fff',
+                              outline: 'none',
+                              boxSizing: 'border-box',
+                            }}
+                          />
+                        </div>
+
+                        {/* Project Type Switcher */}
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          {[
+                            { id: 'auto', label: 'Auto Detect', icon: null },
+                            { id: 'frontend', label: 'Frontend UI', icon: <Globe size={11} /> },
+                            { id: 'backend', label: 'Backend API', icon: <Cpu size={11} /> },
+                          ].map((item) => {
+                            const isSelected = selectedType === item.id;
+                            return (
+                              <button
+                                key={item.id}
+                                type="button"
+                                onClick={() =>
+                                  setRepoProjectTypes((prev) => ({
+                                    ...prev,
+                                    [repo.id]: item.id as any,
+                                  }))
+                                }
+                                style={{
+                                  background: isSelected ? '#262626' : '#141414',
+                                  color: isSelected ? '#fff' : '#777',
+                                  border: isSelected ? '1px solid #444' : '1px solid #222',
+                                  borderRadius: '5px',
+                                  padding: '4px 8px',
+                                  fontSize: '11px',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  fontWeight: isSelected ? 600 : 400,
+                                }}
+                              >
+                                {item.icon}
+                                <span>{item.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

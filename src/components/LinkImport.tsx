@@ -1,10 +1,30 @@
+import { useState } from 'react';
+import { ChevronDown, ChevronUp, FolderTree, Cpu, Globe } from 'lucide-react';
+
 interface LinkImportProps {
   customRepoUrl: string;
   onUrlChange: (url: string) => void;
-  onImport: () => void;
+  onImport: (rootDir?: string, projectType?: 'frontend' | 'backend' | 'auto') => void;
 }
 
+const ROOT_PRESETS = [
+  { label: './ (Root)', value: '' },
+  { label: 'frontend', value: 'frontend' },
+  { label: 'backend', value: 'backend' },
+  { label: 'client', value: 'client' },
+  { label: 'server', value: 'server' },
+];
+
 export function LinkImport({ customRepoUrl, onUrlChange, onImport }: LinkImportProps) {
+  const [showSettings, setShowSettings] = useState(false);
+  const [rootDir, setRootDir] = useState('');
+  const [projectType, setProjectType] = useState<'frontend' | 'backend' | 'auto'>('auto');
+
+  const handleImportClick = () => {
+    if (!customRepoUrl.trim()) return;
+    onImport(rootDir.trim() || undefined, projectType);
+  };
+
   return (
     <div
       style={{
@@ -30,12 +50,12 @@ export function LinkImport({ customRepoUrl, onUrlChange, onImport }: LinkImportP
           Import Third-Party Git Repository
         </h3>
         <p style={{ fontSize: '12px', color: '#555', margin: 0, lineHeight: '1.6' }}>
-          Paste a public Git repository URL from GitHub, GitLab, or Bitbucket to instantly clone and deploy it as a sandbox.
+          Paste a public Git repository URL to clone and deploy it as a sandbox. Supports both Monorepos and single apps.
         </p>
       </div>
 
       {/* URL input */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <div style={{ position: 'relative' }}>
           {/* Git icon */}
           <svg
@@ -64,7 +84,7 @@ export function LinkImport({ customRepoUrl, onUrlChange, onImport }: LinkImportP
             placeholder="https://github.com/username/repo"
             value={customRepoUrl}
             onChange={(e) => onUrlChange(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && onImport()}
+            onKeyDown={(e) => e.key === 'Enter' && handleImportClick()}
             style={{
               width: '100%',
               background: '#111',
@@ -79,8 +99,181 @@ export function LinkImport({ customRepoUrl, onUrlChange, onImport }: LinkImportP
           />
         </div>
 
+        {/* Monorepo / Root Directory Accordion Trigger */}
         <button
-          onClick={onImport}
+          type="button"
+          onClick={() => setShowSettings((prev) => !prev)}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: showSettings ? '#fff' : '#888',
+            fontSize: '11.5px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '4px 2px',
+            cursor: 'pointer',
+            textAlign: 'left',
+          }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <FolderTree size={13} color="#3b82f6" />
+            <span>Root Directory (Monorepo Settings)</span>
+            {rootDir && (
+              <span
+                style={{
+                  fontSize: '10px',
+                  background: 'rgba(59,130,246,0.15)',
+                  color: '#60a5fa',
+                  padding: '1px 6px',
+                  borderRadius: '4px',
+                }}
+              >
+                /{rootDir}
+              </span>
+            )}
+          </span>
+          {showSettings ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+        </button>
+
+        {/* Collapsible Settings Panel */}
+        {showSettings && (
+          <div
+            style={{
+              background: '#111',
+              border: '1px solid #222',
+              borderRadius: '8px',
+              padding: '12px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            {/* Quick preset chips */}
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: '#aaa',
+                  marginBottom: '6px',
+                }}
+              >
+                Select Subfolder:
+              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {ROOT_PRESETS.map((preset) => {
+                  const isSelected = rootDir === preset.value;
+                  return (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => setRootDir(preset.value)}
+                      style={{
+                        background: isSelected ? '#3b82f6' : '#181818',
+                        color: isSelected ? '#fff' : '#aaa',
+                        border: isSelected ? '1px solid #3b82f6' : '1px solid #282828',
+                        borderRadius: '5px',
+                        padding: '3px 8px',
+                        fontSize: '11px',
+                        cursor: 'pointer',
+                        fontWeight: isSelected ? 600 : 400,
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Custom input */}
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: '#aaa',
+                  marginBottom: '4px',
+                }}
+              >
+                Or Custom Path:
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. apps/web or packages/api"
+                value={rootDir}
+                onChange={(e) => setRootDir(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: '#0d0d0d',
+                  border: '1px solid #2a2a2a',
+                  borderRadius: '6px',
+                  padding: '6px 10px',
+                  fontSize: '11.5px',
+                  color: '#fff',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
+            {/* Project Type Switcher */}
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: '#aaa',
+                  marginBottom: '6px',
+                }}
+              >
+                Target Type:
+              </label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {[
+                  { id: 'auto', label: 'Auto Detect', icon: null },
+                  { id: 'frontend', label: 'Frontend UI', icon: <Globe size={11} /> },
+                  { id: 'backend', label: 'Backend API', icon: <Cpu size={11} /> },
+                ].map((item) => {
+                  const isSelected = projectType === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setProjectType(item.id as any)}
+                      style={{
+                        flex: 1,
+                        background: isSelected ? '#242424' : '#141414',
+                        color: isSelected ? '#fff' : '#777',
+                        border: isSelected ? '1px solid #444' : '1px solid #222',
+                        borderRadius: '5px',
+                        padding: '4px 6px',
+                        fontSize: '11px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px',
+                        fontWeight: isSelected ? 600 : 400,
+                      }}
+                    >
+                      {item.icon}
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={handleImportClick}
           disabled={!customRepoUrl.trim()}
           style={{
             width: '100%',
@@ -93,6 +286,7 @@ export function LinkImport({ customRepoUrl, onUrlChange, onImport }: LinkImportP
             fontWeight: '600',
             cursor: customRepoUrl.trim() ? 'pointer' : 'not-allowed',
             transition: 'all 0.15s',
+            marginTop: '4px',
           }}
           onMouseEnter={(e) => {
             if (customRepoUrl.trim())
@@ -110,7 +304,7 @@ export function LinkImport({ customRepoUrl, onUrlChange, onImport }: LinkImportP
             (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
           }}
         >
-          Import
+          Import {rootDir ? `(${rootDir})` : ''}
         </button>
       </div>
 

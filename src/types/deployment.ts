@@ -9,6 +9,9 @@ export interface ActiveDeployment {
   error?: string;
   logs: string[];
   expiresAt?: string;
+  rootDir?: string;
+  isBackend?: boolean;
+  projectType?: 'frontend' | 'backend' | 'auto';
   detectedEnv?: {
     file: string;
     keys: string[];
