@@ -115,13 +115,16 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
       setFiles(processed);
       setTotalSize(totalBytes);
 
-      // Infer project name from first directory or package.json
+      // Infer project name from first directory, file name, or default
       if (!projectName) {
         if (defaultName) {
           setProjectName(defaultName);
         } else if (fileList[0]?.webkitRelativePath) {
           const rootFolder = fileList[0].webkitRelativePath.split('/')[0];
           setProjectName(rootFolder);
+        } else if (fileList[0]?.name) {
+          const cleanFileName = fileList[0].name.replace(/\.[^/.]+$/, '').toLowerCase();
+          setProjectName(cleanFileName || 'my-html-page');
         } else {
           setProjectName('my-uploaded-app');
         }
@@ -261,6 +264,9 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
         directory=""
         multiple
         style={{ display: 'none' }}
+        onClick={(e) => {
+          (e.target as HTMLInputElement).value = '';
+        }}
         onChange={handleFolderChange}
       />
       <input
@@ -268,6 +274,9 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
         type="file"
         accept=".zip"
         style={{ display: 'none' }}
+        onClick={(e) => {
+          (e.target as HTMLInputElement).value = '';
+        }}
         onChange={handleZipChange}
       />
       <input
@@ -276,6 +285,9 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
         accept=".html,.htm,.css,.js,.svg,.png,.jpg,.jpeg,.json"
         multiple
         style={{ display: 'none' }}
+        onClick={(e) => {
+          (e.target as HTMLInputElement).value = '';
+        }}
         onChange={handleFolderChange}
       />
 
