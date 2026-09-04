@@ -229,7 +229,7 @@ export function DeploymentProgress({
 
   const formatLiveUrl = (rawUrl?: string): string => {
     if (!rawUrl) {
-      return `https://${repo.name.toLowerCase().replace(/[^a-z0-9-]/g, '-')}-sandbox.vercel.app`;
+      return '';
     }
     let cleaned = rawUrl.trim();
     // Strip duplicate protocols like http://http:// or http://https://
@@ -239,6 +239,17 @@ export function DeploymentProgress({
     if (!/^https?:\/\//i.test(cleaned)) {
       cleaned = `http://${cleaned}`;
     }
+    try {
+      const parsed = new URL(cleaned);
+      if (
+        parsed.hostname === 'localhost' ||
+        parsed.hostname === '127.0.0.1' ||
+        parsed.hostname.includes('vercel.app')
+      ) {
+        parsed.hostname = '129.225.66.172';
+        return parsed.toString();
+      }
+    } catch {}
     return cleaned;
   };
 

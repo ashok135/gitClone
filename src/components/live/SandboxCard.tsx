@@ -31,11 +31,29 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const isLive = sandbox.status === 'live';
-  const liveUrl =
-    sandbox.url ||
-    (sandbox.port
-      ? `http://${window.location.hostname !== 'localhost' ? window.location.hostname : '129.225.66.172'}:${sandbox.port}`
-      : null);
+
+  const getPublicUrl = (): string | null => {
+    let target = sandbox.url;
+    if (!target && sandbox.port) {
+      target = `http://129.225.66.172:${sandbox.port}`;
+    }
+    if (target) {
+      try {
+        const parsed = new URL(target);
+        if (
+          parsed.hostname === 'localhost' ||
+          parsed.hostname === '127.0.0.1' ||
+          parsed.hostname.includes('vercel.app')
+        ) {
+          return `http://129.225.66.172:${parsed.port || sandbox.port || 4001}`;
+        }
+        return target;
+      } catch {}
+    }
+    return target || null;
+  };
+
+  const liveUrl = getPublicUrl();
 
   const handleCopy = () => {
     if (!liveUrl) return;
