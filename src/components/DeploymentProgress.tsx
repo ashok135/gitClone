@@ -168,8 +168,22 @@ export function DeploymentProgress({
     return 'idle';
   };
 
-  const sandboxUrl =
-    url || `https://${repo.name.toLowerCase().replace(/[^a-z0-9-]/g, '-')}-sandbox.vercel.app`;
+  const formatLiveUrl = (rawUrl?: string): string => {
+    if (!rawUrl) {
+      return `https://${repo.name.toLowerCase().replace(/[^a-z0-9-]/g, '-')}-sandbox.vercel.app`;
+    }
+    let cleaned = rawUrl.trim();
+    // Strip duplicate protocols like http://http:// or http://https://
+    while (/^https?:\/\/https?:\/\//i.test(cleaned)) {
+      cleaned = cleaned.replace(/^https?:\/\//i, '');
+    }
+    if (!/^https?:\/\//i.test(cleaned)) {
+      cleaned = `http://${cleaned}`;
+    }
+    return cleaned;
+  };
+
+  const sandboxUrl = formatLiveUrl(url);
 
   return (
     <div
