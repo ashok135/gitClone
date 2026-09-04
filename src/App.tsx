@@ -115,45 +115,83 @@ function App() {
 
   const [activeDeployment, setActiveDeployment] = useState<ActiveDeployment | null>(null);
 
-  // Listen to real-time build & deployment progress via Server-Sent Events (SSE)
+  // Listen to real-time build & deployment progress via Server-Sent Events (SSE) with polling fallback
   useEffect(() => {
-    if (!activeDeployment?.id || activeDeployment.step >= 4 || activeDeployment.step === -1) {
+    if (!activeDeployment?.id || activeDeployment.step >= 4 || activeDeployment.step < 0) {
       return;
     }
 
     const apiUrl = getApiUrl();
-    const eventSource = new EventSource(`${apiUrl}/api/project/stream/${activeDeployment.id}`);
+    let isSubscribed = true;
+    let eventSource: EventSource | null = null;
 
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        setActiveDeployment((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            step: data.step !== undefined ? data.step : prev.step,
-            status: data.status || prev.status,
-            url: data.url || prev.url,
-            error: data.error || prev.error,
-            logs: data.logs || prev.logs,
-          };
-        });
+    try {
+      eventSource = new EventSource(`${apiUrl}/api/project/stream/${activeDeployment.id}`);
 
-        if (data.step === 4 || data.step === -1) {
-          eventSource.close();
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setActiveDeployment((prev) => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              step: data.step !== undefined ? data.step : prev.step,
+              status: data.status || prev.status,
+              url: data.url || prev.url,
+              error: data.error || prev.error,
+              logs: data.logs || prev.logs,
+            };
+          });
+
+          if (data.step >= 4 || data.step < 0) {
+            if (eventSource) eventSource.close();
+          }
+        } catch (err) {
+          console.error('Failed to parse SSE event:', err);
         }
-      } catch (err) {
-        console.error('Failed to parse SSE event:', err);
-      }
-    };
+      };
 
-    eventSource.onerror = (err) => {
-      console.error('SSE connection error:', err);
-      eventSource.close();
-    };
+      eventSource.onerror = (err) => {
+        console.warn('SSE connection closed or timed out, relying on polling:', err);
+        if (eventSource) eventSource.close();
+      };
+    } catch (e) {
+      console.warn('Could not initialize EventSource:', e);
+    }
+
+    // Polling fallback every 2.5s (vital for Vercel 10s serverless timeout)
+    const pollInterval = setInterval(async () => {
+      if (!isSubscribed) return;
+      try {
+        const res = await fetch(`${apiUrl}/api/project/status/${activeDeployment.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setActiveDeployment((prev) => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              step: data.step !== undefined ? data.step : prev.step,
+              status: data.status || prev.status,
+              url: data.url || prev.url,
+              error: data.error || prev.error,
+              logs: data.logs && data.logs.length > (prev.logs?.length || 0) ? data.logs : prev.logs,
+            };
+          });
+
+          if (data.step >= 4 || data.step < 0) {
+            clearInterval(pollInterval);
+            if (eventSource) eventSource.close();
+          }
+        }
+      } catch (pollErr) {
+        console.error('Polling status error:', pollErr);
+      }
+    }, 2500);
 
     return () => {
-      eventSource.close();
+      isSubscribed = false;
+      clearInterval(pollInterval);
+      if (eventSource) eventSource.close();
     };
   }, [activeDeployment?.id]);
 

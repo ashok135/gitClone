@@ -146,7 +146,7 @@ export function DeploymentProgress({
   const [showLogs, setShowLogs] = useState(true);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
-  const isFailed = step === -1 || !!error;
+  const isFailed = step < 0 || !!error;
   const isLive = step >= 4 && !isFailed;
   const progress = isFailed ? 100 : Math.min((Math.max(step, 0) / 4) * 100, 100);
 
