@@ -28,9 +28,17 @@ export function useSandboxes() {
           // Merge/overwrite with remote items
           remote.forEach((s) => {
             const existing = map.get(s.id);
+            const resolvedName =
+              existing?.repoName && !existing.repoName.startsWith('dep_')
+                ? existing.repoName
+                : s.repoName && !s.repoName.startsWith('dep_')
+                ? s.repoName
+                : existing?.repoName || s.repoName;
+
             map.set(s.id, {
               ...existing,
               ...s,
+              repoName: resolvedName,
               url: s.url || existing?.url || null,
               port: s.port || existing?.port,
               expiresAt: s.expiresAt || existing?.expiresAt,
@@ -61,6 +69,10 @@ export function useSandboxes() {
       const merged: SandboxItem = {
         ...existing,
         ...sandbox,
+        repoName:
+          sandbox.repoName && !sandbox.repoName.startsWith('dep_')
+            ? sandbox.repoName
+            : existing?.repoName || sandbox.repoName,
         url: sandbox.url || existing?.url || null,
         port: sandbox.port || existing?.port,
         expiresAt: sandbox.expiresAt || existing?.expiresAt,
@@ -82,13 +94,20 @@ export function useSandboxes() {
   }, []);
 
   const stopSandbox = useCallback(async (id: string) => {
+    // 1. Optimistically delete immediately from UI for 0ms lag
+    setSandboxes((prev) => {
+      const updated = prev.filter((s) => s.id !== id);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
+
+    // 2. Call backend asynchronously to terminate worker process
     try {
       await ProjectApi.stopSandbox(id);
-      updateSandbox(id, { status: 'stopped', url: null });
     } catch (err) {
       console.error('Error stopping sandbox:', err);
     }
-  }, [updateSandbox]);
+  }, []);
 
   const activeCount = sandboxes.filter(
     (s) =>

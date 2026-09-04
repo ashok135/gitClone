@@ -62,6 +62,13 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const displayName =
+    sandbox.repoName && !sandbox.repoName.startsWith('dep_')
+      ? sandbox.repoName
+      : sandbox.repoUrl && sandbox.repoUrl !== 'local-upload'
+      ? sandbox.repoUrl.split('/').pop()?.replace(/\.git$/, '') || 'Git Project'
+      : `Project ${sandbox.id.replace(/^dep_/, '').slice(-4)}`;
+
   return (
     <div
       style={{
@@ -109,7 +116,7 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#fff' }}>
-                {sandbox.repoName}
+                {displayName}
               </h4>
               <span
                 style={{
