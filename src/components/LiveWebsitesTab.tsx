@@ -56,15 +56,20 @@ export const LiveWebsitesTab: React.FC<LiveWebsitesTabProps> = ({
     }
   };
 
-  const activeSandboxes = sandboxes.filter(
-    (s) =>
-      s.status === 'live' ||
+  const activeSandboxes = sandboxes.filter((s) => {
+    const isExpired = s.expiresAt && new Date(s.expiresAt).getTime() < Date.now();
+    if (isExpired) return false;
+    if (s.status === 'live') {
+      return Boolean(s.port || s.url);
+    }
+    return (
       s.status === 'cloning' ||
       s.status === 'installing' ||
       s.status === 'building' ||
       s.status === 'starting' ||
       s.status === 'unpacking'
-  );
+    );
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>

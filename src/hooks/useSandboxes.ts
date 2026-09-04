@@ -8,7 +8,16 @@ export function useSandboxes() {
   const [sandboxes, setSandboxes] = useState<SandboxItem[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed: SandboxItem[] = JSON.parse(saved);
+      const now = Date.now();
+      // Filter out corrupted/ghost items that have no port/url or are already expired
+      return parsed.filter((s) => {
+        if (!s || !s.id) return false;
+        if (s.expiresAt && new Date(s.expiresAt).getTime() < now) return false;
+        if (s.status === 'live' && !s.port && !s.url) return false;
+        return true;
+      });
     } catch {
       return [];
     }
@@ -19,14 +28,31 @@ export function useSandboxes() {
     setFetching(true);
     try {
       const remote = await ProjectApi.fetchSandboxes();
-      if (remote && remote.length > 0) {
-        // Merge remote sandboxes with locally cached sandboxes
-        setSandboxes((prev) => {
-          const map = new Map<string, SandboxItem>();
-          // Put local items first
-          prev.forEach((s) => map.set(s.id, s));
-          // Merge/overwrite with remote items
+      setSandboxes((prev) => {
+        const now = Date.now();
+        const map = new Map<string, SandboxItem>();
+
+        // 1. Keep local sandboxes that are actively in-progress (step < 4)
+        prev
+          .filter(
+            (s) =>
+              typeof s.step === 'number' &&
+              s.step < 4 &&
+              s.status !== 'live' &&
+              s.status !== 'failed' &&
+              s.status !== 'stopped'
+          )
+          .forEach((s) => map.set(s.id, s));
+
+        // 2. Add remote active sandboxes (source of truth from VM)
+        if (Array.isArray(remote)) {
           remote.forEach((s) => {
+            if (!s || !s.id) return;
+            const isExpired = s.expiresAt && new Date(s.expiresAt).getTime() < now;
+            if (isExpired) return;
+            // A live sandbox must have an active port or url
+            if (s.status === 'live' && !s.port && !s.url) return;
+
             const existing = map.get(s.id);
             const resolvedName =
               existing?.repoName && !existing.repoName.startsWith('dep_')
@@ -44,14 +70,14 @@ export function useSandboxes() {
               expiresAt: s.expiresAt || existing?.expiresAt,
             });
           });
+        }
 
-          const merged = Array.from(map.values()).sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-          return merged;
-        });
-      }
+        const merged = Array.from(map.values()).sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        return merged;
+      });
     } catch (e) {
       console.error('Failed to refresh sandboxes:', e);
     } finally {
@@ -109,15 +135,20 @@ export function useSandboxes() {
     }
   }, []);
 
-  const activeCount = sandboxes.filter(
-    (s) =>
-      s.status === 'live' ||
+  const activeCount = sandboxes.filter((s) => {
+    const isExpired = s.expiresAt && new Date(s.expiresAt).getTime() < Date.now();
+    if (isExpired) return false;
+    if (s.status === 'live') {
+      return Boolean(s.port || s.url);
+    }
+    return (
       s.status === 'cloning' ||
       s.status === 'installing' ||
       s.status === 'building' ||
       s.status === 'starting' ||
       s.status === 'unpacking'
-  ).length;
+    );
+  }).length;
 
   return {
     sandboxes,
