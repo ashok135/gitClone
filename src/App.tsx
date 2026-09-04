@@ -17,6 +17,11 @@ interface ActiveDeployment {
   error?: string;
   logs: string[];
   expiresAt?: string;
+  detectedEnv?: {
+    file: string;
+    keys: string[];
+    template?: string;
+  };
 }
 
 function App() {
@@ -142,6 +147,7 @@ function App() {
               error: data.error || prev.error,
               logs: data.logs || prev.logs,
               expiresAt: data.expiresAt || prev.expiresAt,
+              detectedEnv: data.detectedEnv || prev.detectedEnv,
             };
           });
 
@@ -178,6 +184,7 @@ function App() {
               error: data.error || prev.error,
               logs: data.logs && data.logs.length > (prev.logs?.length || 0) ? data.logs : prev.logs,
               expiresAt: data.expiresAt || prev.expiresAt,
+              detectedEnv: data.detectedEnv || prev.detectedEnv,
             };
           });
 
@@ -320,7 +327,7 @@ function App() {
       {error && (
         <div
           style={{
-            maxWidth: '900px',
+            maxWidth: '1280px',
             margin: '16px auto',
             padding: '0 24px',
           }}
@@ -385,9 +392,10 @@ function App() {
       ) : (
         <main
           style={{
-            maxWidth: '900px',
+            maxWidth: '1280px',
             margin: '0 auto',
-            padding: '48px 24px',
+            padding: '40px 24px',
+            boxSizing: 'border-box',
           }}
         >
           {user ? (
@@ -440,6 +448,7 @@ function App() {
                   logs={activeDeployment.logs}
                   error={activeDeployment.error}
                   expiresAt={activeDeployment.expiresAt}
+                  detectedEnv={activeDeployment.detectedEnv}
                   onBack={() => setActiveDeployment(null)}
                   onStop={handleStopDeployment}
                 />

@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import type { Repo } from './ImportRepo';
 
+export interface DetectedEnv {
+  file: string;
+  keys: string[];
+  template?: string;
+}
+
 export interface DeploymentProgressProps {
   repo: Repo;
   step: number; // 0=Idle, 1=Cloning, 2=Installing, 3=Starting, 4=Live, <0=Failed, -99=Terminated
@@ -10,6 +16,7 @@ export interface DeploymentProgressProps {
   url?: string;
   error?: string;
   expiresAt?: string;
+  detectedEnv?: DetectedEnv;
   onStop?: () => Promise<void> | void;
 }
 
@@ -147,17 +154,43 @@ export function DeploymentProgress({
   url,
   error,
   expiresAt,
+  detectedEnv,
   onStop,
 }: DeploymentProgressProps) {
-  const [showLogs, setShowLogs] = useState(true);
+  const [showLogs, setShowLogs] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [viewport, setViewport] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [iframeKey, setIframeKey] = useState(0);
+  const [copiedUrl, setCopiedUrl] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<string>('');
+  const [showEnvTemplate, setShowEnvTemplate] = useState(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   const isTerminated = step === -99 || status === 'stopped' || status === 'expired';
   const isFailed = (step < 0 && !isTerminated) || !!error;
   const isLive = step >= 4 && !isFailed && !isTerminated;
   const progress = isFailed || isTerminated ? 100 : Math.min((Math.max(step, 0) / 4) * 100, 100);
+
+  // Real-time ticking countdown to show exactly when the sandbox will end
+  useEffect(() => {
+    if (!expiresAt) return;
+    const calculateTime = () => {
+      const now = Date.now();
+      const end = new Date(expiresAt).getTime();
+      const diffSecs = Math.max(0, Math.floor((end - now) / 1000));
+      if (diffSecs <= 0) {
+        setTimeLeft('Expired');
+        return;
+      }
+      const mins = Math.floor(diffSecs / 60);
+      const secs = diffSecs % 60;
+      setTimeLeft(`${mins}m ${secs < 10 ? '0' : ''}${secs}s`);
+    };
+    calculateTime();
+    const interval = setInterval(calculateTime, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt]);
 
   // Auto-scroll logs
   useEffect(() => {
@@ -445,24 +478,27 @@ export function DeploymentProgress({
               </a>
             </div>
 
-            {/* Option 2: Auto-expire TTL pill */}
+            {/* Option 2: Auto-expire TTL pill with live countdown */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid #222',
-                padding: '4px 10px',
-                borderRadius: '6px',
-                fontSize: '11px',
-                color: '#888',
+                gap: '6px',
+                background: 'rgba(34,197,94,0.06)',
+                border: '1px solid rgba(34,197,94,0.25)',
+                padding: '5px 12px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                color: '#4ade80',
+                fontWeight: '600',
               }}
               title={expiresAt ? `Expires at ${new Date(expiresAt).toLocaleTimeString()}` : 'Auto-expires in 60 minutes to reclaim VM disk'}
             >
               <span>⏳</span>
               <span>
-                {expiresAt
+                {timeLeft
+                  ? `Live · Expires in ${timeLeft}`
+                  : expiresAt
                   ? `Expires: ${new Date(expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
                   : 'TTL: 60m Auto-Clean'}
               </span>
@@ -558,6 +594,334 @@ export function DeploymentProgress({
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* INTERACTIVE LIVE WEBSITE PREVIEW FRAME */}
+      {/* ---------------------------------------------------- */}
+      {isLive && (
+        <div
+          style={{
+            borderRadius: '12px',
+            border: '1px solid #222',
+            background: '#0d0d0d',
+            overflow: 'hidden',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {/* Top Browser Chrome Bar */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 16px',
+              background: '#141414',
+              borderBottom: '1px solid #222',
+              gap: '16px',
+              flexWrap: 'wrap',
+            }}
+          >
+            {/* Window Controls & Title */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ width: '11px', height: '11px', borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
+              <span style={{ width: '11px', height: '11px', borderRadius: '50%', background: '#eab308', display: 'inline-block' }} />
+              <span style={{ width: '11px', height: '11px', borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
+              <span style={{ fontSize: '12px', color: '#aaa', marginLeft: '6px', fontWeight: '600' }}>
+                Live Sandbox Viewport
+              </span>
+            </div>
+
+            {/* Address Bar */}
+            <div
+              style={{
+                flex: '1',
+                maxWidth: '520px',
+                minWidth: '220px',
+                display: 'flex',
+                alignItems: 'center',
+                background: '#0a0a0a',
+                border: '1px solid #2a2a2a',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                fontSize: '12px',
+                color: '#4ade80',
+                gap: '8px',
+              }}
+            >
+              <span style={{ color: '#22c55e', fontSize: '11px' }}>🔒</span>
+              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
+                {sandboxUrl}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(sandboxUrl);
+                  setCopiedUrl(true);
+                  setTimeout(() => setCopiedUrl(false), 2000);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: copiedUrl ? '#4ade80' : '#777',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  padding: '0 4px',
+                }}
+                title="Copy URL"
+              >
+                {copiedUrl ? '✓ Copied' : 'Copy'}
+              </button>
+            </div>
+
+            {/* Controls: Reload, Device Switcher, Open External */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {/* Reload Button */}
+              <button
+                type="button"
+                onClick={() => setIframeKey((k) => k + 1)}
+                style={{
+                  background: '#202020',
+                  border: '1px solid #333',
+                  color: '#ccc',
+                  borderRadius: '6px',
+                  padding: '5px 10px',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                }}
+                title="Refresh Sandbox View"
+              >
+                🔄 Reload
+              </button>
+
+              {/* Viewport switcher */}
+              <div style={{ display: 'flex', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '6px', padding: '2px' }}>
+                <button
+                  type="button"
+                  onClick={() => setViewport('desktop')}
+                  style={{
+                    background: viewport === 'desktop' ? '#262626' : 'transparent',
+                    border: 'none',
+                    color: viewport === 'desktop' ? '#fff' : '#777',
+                    borderRadius: '4px',
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                  }}
+                  title="Desktop View (100%)"
+                >
+                  🖥️ Desktop
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewport('tablet')}
+                  style={{
+                    background: viewport === 'tablet' ? '#262626' : 'transparent',
+                    border: 'none',
+                    color: viewport === 'tablet' ? '#fff' : '#777',
+                    borderRadius: '4px',
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                  }}
+                  title="Tablet View (768px)"
+                >
+                  💻 Tablet
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewport('mobile')}
+                  style={{
+                    background: viewport === 'mobile' ? '#262626' : 'transparent',
+                    border: 'none',
+                    color: viewport === 'mobile' ? '#fff' : '#777',
+                    borderRadius: '4px',
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                  }}
+                  title="Mobile View (375px)"
+                >
+                  📱 Mobile
+                </button>
+              </div>
+
+              {/* Open in New Tab */}
+              <a
+                href={sandboxUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  background: '#16a34a',
+                  color: '#fff',
+                  borderRadius: '6px',
+                  padding: '5px 12px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  textDecoration: 'none',
+                }}
+              >
+                Open Tab ↗
+              </a>
+            </div>
+          </div>
+
+          {/* Iframe Viewport Area */}
+          <div
+            style={{
+              width: '100%',
+              minHeight: '620px',
+              background: '#080808',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'stretch',
+              padding: viewport === 'desktop' ? '0' : '24px 0',
+              transition: 'all 0.3s ease',
+            }}
+          >
+            <div
+              style={{
+                width: viewport === 'mobile' ? '375px' : viewport === 'tablet' ? '768px' : '100%',
+                maxWidth: '100%',
+                height: '620px',
+                borderRadius: viewport === 'desktop' ? '0' : '12px',
+                overflow: 'hidden',
+                boxShadow: viewport === 'desktop' ? 'none' : '0 15px 40px rgba(0,0,0,0.9)',
+                border: viewport === 'desktop' ? 'none' : '2px solid #333',
+                background: '#fff',
+                transition: 'width 0.3s ease',
+              }}
+            >
+              <iframe
+                key={iframeKey}
+                src={sandboxUrl}
+                title="Live Sandbox View"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* ENVIRONMENT SETUP (.env) INSPECTOR CARD */}
+      {/* ---------------------------------------------------- */}
+      {isLive && (
+        <div
+          style={{
+            borderRadius: '10px',
+            border: '1px solid #222',
+            background: '#0d0d0d',
+            padding: '18px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '16px' }}>⚙️</span>
+              <span style={{ fontSize: '13px', fontWeight: '700', color: '#fff' }}>
+                Environment & Runtime Configuration (.env)
+              </span>
+            </div>
+            {detectedEnv?.keys && detectedEnv.keys.length > 0 ? (
+              <span
+                style={{
+                  fontSize: '11px',
+                  color: '#4ade80',
+                  background: 'rgba(34,197,94,0.1)',
+                  border: '1px solid rgba(34,197,94,0.3)',
+                  padding: '3px 8px',
+                  borderRadius: '999px',
+                  fontWeight: '600',
+                }}
+              >
+                ✓ {detectedEnv.keys.length} Variable(s) Configured
+              </span>
+            ) : (
+              <span style={{ fontSize: '11px', color: '#888' }}>
+                ✓ Self-contained build (No custom .env required)
+              </span>
+            )}
+          </div>
+
+          {detectedEnv?.keys && detectedEnv.keys.length > 0 ? (
+            <div style={{ fontSize: '12px', color: '#aaa', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p style={{ margin: 0 }}>
+                This repository includes a <strong style={{ color: '#fff' }}>{detectedEnv.file}</strong> template. The sandbox initialized default values for:
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {detectedEnv.keys.map((k) => (
+                  <span
+                    key={k}
+                    style={{
+                      background: '#1a1a1a',
+                      border: '1px solid #333',
+                      borderRadius: '4px',
+                      padding: '2px 8px',
+                      fontFamily: 'monospace',
+                      fontSize: '11px',
+                      color: '#60a5fa',
+                    }}
+                  >
+                    {k}
+                  </span>
+                ))}
+              </div>
+              {detectedEnv.template && (
+                <div style={{ marginTop: '4px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowEnvTemplate(!showEnvTemplate)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#60a5fa',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      padding: '0',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    {showEnvTemplate ? 'Hide detected .env template ▲' : 'View detected .env template ▼'}
+                  </button>
+                  {showEnvTemplate && (
+                    <pre
+                      style={{
+                        marginTop: '8px',
+                        background: '#050505',
+                        border: '1px solid #222',
+                        borderRadius: '6px',
+                        padding: '12px',
+                        fontSize: '11px',
+                        color: '#93c5fd',
+                        overflowX: 'auto',
+                        fontFamily: 'monospace',
+                      }}
+                    >
+                      {detectedEnv.template}
+                    </pre>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <p style={{ margin: 0, fontSize: '12px', color: '#777' }}>
+              Standard production bundle was built cleanly without missing environment variables.
+            </p>
+          )}
         </div>
       )}
 
