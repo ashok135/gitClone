@@ -1,4 +1,5 @@
 import React from 'react';
+import { GitBranch, FolderUp } from 'lucide-react';
 
 interface DeploySubTabsProps {
   mode: 'git' | 'folder';
@@ -32,7 +33,8 @@ export const DeploySubTabs: React.FC<DeploySubTabsProps> = ({ mode, onSelectMode
           gap: '6px',
         }}
       >
-        <span>🐙</span> GitHub Repository
+        <GitBranch size={15} color={mode === 'git' ? '#000' : '#888'} />
+        <span>GitHub Repository</span>
       </button>
 
       <button
@@ -51,7 +53,8 @@ export const DeploySubTabs: React.FC<DeploySubTabsProps> = ({ mode, onSelectMode
           gap: '6px',
         }}
       >
-        <span>📁</span> Upload Local Folder / .ZIP
+        <FolderUp size={15} color={mode === 'folder' ? '#000' : '#888'} />
+        <span>Upload Local Folder / .ZIP</span>
       </button>
     </div>
   );

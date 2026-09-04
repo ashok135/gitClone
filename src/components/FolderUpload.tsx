@@ -1,7 +1,18 @@
 import React, { useState, useRef } from 'react';
 import JSZip from 'jszip';
-
 import type { UploadedFilePayload } from '../types/upload';
+import {
+  FolderUp,
+  UploadCloud,
+  Loader2,
+  Folder,
+  Archive,
+  AlertCircle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Zap,
+} from 'lucide-react';
 export type { UploadedFilePayload };
 
 interface FolderUploadProps {
@@ -229,7 +240,7 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
     >
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-          <span style={{ fontSize: '18px' }}>📁</span>
+          <FolderUp size={18} color="#60a5fa" />
           <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#fff' }}>
             Upload Project Folder or .ZIP
           </h3>
@@ -298,7 +309,11 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
             fontSize: '22px',
           }}
         >
-          {reading ? '⏳' : '⚡'}
+          {reading ? (
+            <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} color="#60a5fa" />
+          ) : (
+            <UploadCloud size={24} color="#60a5fa" />
+          )}
         </div>
 
         <div>
@@ -328,7 +343,8 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
               gap: '6px',
             }}
           >
-            📁 Select Folder
+            <Folder size={14} />
+            <span>Select Folder</span>
           </button>
           <button
             type="button"
@@ -347,7 +363,8 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
               gap: '6px',
             }}
           >
-            🗜️ Select .ZIP Archive
+            <Archive size={14} />
+            <span>Select .ZIP Archive</span>
           </button>
         </div>
       </div>
@@ -361,9 +378,13 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
             borderRadius: '8px',
             color: '#f87171',
             fontSize: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
           }}
         >
-          ⚠ {error}
+          <AlertCircle size={14} />
+          <span>{error}</span>
         </div>
       )}
 
@@ -382,8 +403,9 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>
-                ✓ Ready to deploy {files.length} files
+              <div style={{ fontSize: '13px', fontWeight: 600, color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <CheckCircle2 size={14} color="#10b981" />
+                <span>Ready to deploy {files.length} files</span>
               </div>
               <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>
                 Total payload size: {formatBytes(totalSize)} (node_modules skipped)
@@ -448,7 +470,7 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
                 gap: '4px',
               }}
             >
-              <span>{showEnvEditor ? '▼' : '►'}</span>
+              {showEnvEditor ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               {detectedEnvExample
                 ? 'Detected .env.example configuration (Click to edit)'
                 : 'Configure Environment Variables (.env)'}
@@ -498,7 +520,17 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
               opacity: isDeploying ? 0.7 : 1,
             }}
           >
-            {isDeploying ? '🚀 Deploying Sandbox...' : '⚡ Deploy Folder to Sandbox'}
+            {isDeploying ? (
+              <>
+                <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />
+                <span>Deploying Sandbox...</span>
+              </>
+            ) : (
+              <>
+                <Zap size={15} />
+                <span>Deploy Folder to Sandbox</span>
+              </>
+            )}
           </button>
         </div>
       )}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { SandboxItem } from '../types/sandbox';
 import { SandboxCard } from './live/SandboxCard';
 import { ViewportModal } from './live/ViewportModal';
+import { RotateCw, Globe, Rocket } from 'lucide-react';
 
 interface LiveWebsitesTabProps {
   sandboxes: SandboxItem[];
@@ -115,16 +116,13 @@ export const LiveWebsitesTab: React.FC<LiveWebsitesTabProps> = ({
             gap: '6px',
           }}
         >
-          <span
+          <RotateCw
+            size={13}
             style={{
-              display: 'inline-block',
-              transform: loading ? 'rotate(180deg)' : 'none',
-              transition: 'transform 0.5s',
+              animation: loading ? 'spin 1s linear infinite' : 'none',
             }}
-          >
-            ↻
-          </span>
-          {loading ? 'Refreshing...' : 'Refresh'}
+          />
+          <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
         </button>
       </div>
 
@@ -152,10 +150,9 @@ export const LiveWebsitesTab: React.FC<LiveWebsitesTabProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '22px',
             }}
           >
-            🌐
+            <Globe size={24} color="#666" />
           </div>
           <div>
             <div
@@ -192,9 +189,13 @@ export const LiveWebsitesTab: React.FC<LiveWebsitesTabProps> = ({
               fontWeight: 600,
               cursor: 'pointer',
               marginTop: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
             }}
           >
-            🚀 Deploy a Project Now
+            <Rocket size={14} />
+            <span>Deploy a Project Now</span>
           </button>
         </div>
       ) : (

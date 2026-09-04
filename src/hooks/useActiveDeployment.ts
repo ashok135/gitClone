@@ -253,7 +253,7 @@ export function useActiveDeployment({ onSandboxUpdate }: UseActiveDeploymentOpti
               step: -99,
               status: 'stopped',
               url: undefined,
-              logs: [...prev.logs, '🛑 Sandbox stopped and files deleted from VM disk.'],
+              logs: [...prev.logs, '[Terminated] Sandbox stopped and files deleted from VM disk.'],
             }
           : null
       );

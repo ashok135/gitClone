@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Monitor, Tablet, Smartphone, ExternalLink, X } from 'lucide-react';
 
 interface ViewportModalProps {
   url: string | null;
@@ -48,24 +49,62 @@ export const ViewportModal: React.FC<ViewportModalProps> = ({ url, onClose }) =>
               padding: '2px',
             }}
           >
-            {(['desktop', 'tablet', 'mobile'] as const).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setDeviceMode(mode)}
-                style={{
-                  background: deviceMode === mode ? '#333' : 'transparent',
-                  color: deviceMode === mode ? '#fff' : '#888',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '4px 10px',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                  textTransform: 'capitalize',
-                }}
-              >
-                {mode === 'desktop' ? '🖥️ Desktop' : mode === 'tablet' ? '📱 Tablet' : '📲 Mobile'}
-              </button>
-            ))}
+            <button
+              onClick={() => setDeviceMode('desktop')}
+              style={{
+                background: deviceMode === 'desktop' ? '#333' : 'transparent',
+                color: deviceMode === 'desktop' ? '#fff' : '#888',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '4px 10px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <Monitor size={13} />
+              <span>Desktop</span>
+            </button>
+
+            <button
+              onClick={() => setDeviceMode('tablet')}
+              style={{
+                background: deviceMode === 'tablet' ? '#333' : 'transparent',
+                color: deviceMode === 'tablet' ? '#fff' : '#888',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '4px 10px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <Tablet size={13} />
+              <span>Tablet</span>
+            </button>
+
+            <button
+              onClick={() => setDeviceMode('mobile')}
+              style={{
+                background: deviceMode === 'mobile' ? '#333' : 'transparent',
+                color: deviceMode === 'mobile' ? '#fff' : '#888',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '4px 10px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <Smartphone size={13} />
+              <span>Mobile</span>
+            </button>
           </div>
         </div>
 
@@ -78,9 +117,13 @@ export const ViewportModal: React.FC<ViewportModalProps> = ({ url, onClose }) =>
               color: '#60a5fa',
               fontSize: '13px',
               textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
             }}
           >
-            Open in new tab ↗
+            <span>Open in new tab</span>
+            <ExternalLink size={13} />
           </a>
           <button
             onClick={onClose}
@@ -92,9 +135,13 @@ export const ViewportModal: React.FC<ViewportModalProps> = ({ url, onClose }) =>
               padding: '6px 12px',
               cursor: 'pointer',
               fontSize: '13px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
             }}
           >
-            ✕ Close
+            <X size={14} />
+            <span>Close</span>
           </button>
         </div>
       </div>

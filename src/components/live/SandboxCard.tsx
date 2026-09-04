@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import {type SandboxItem } from '../../types/sandbox';
+import type { SandboxItem } from '../../types/sandbox';
+import {
+  FolderArchive,
+  GitBranch,
+  Clock,
+  ExternalLink,
+  MonitorSmartphone,
+  Terminal,
+  Trash2,
+  Copy,
+  Check,
+} from 'lucide-react';
 
 interface SandboxCardProps {
   sandbox: SandboxItem;
@@ -63,10 +74,13 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '18px',
             }}
           >
-            {sandbox.isUpload ? '📁' : '🐙'}
+            {sandbox.isUpload ? (
+              <FolderArchive size={18} color="#c084fc" />
+            ) : (
+              <GitBranch size={18} color="#60a5fa" />
+            )}
           </div>
 
           <div>
@@ -154,7 +168,7 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
               color: '#fbbf24',
             }}
           >
-            <span>⏳</span>
+            <Clock size={13} color="#fbbf24" />
             <span>
               Expires in: <strong>{timeLeft}</strong>
             </span>
@@ -183,7 +197,15 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
               overflow: 'hidden',
             }}
           >
-            <span style={{ fontSize: '12px', color: '#10b981' }}>●</span>
+            <span
+              style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: '#10b981',
+                display: 'inline-block',
+              }}
+            />
             <a
               href={sandbox.url}
               target="_blank"
@@ -210,12 +232,16 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
               borderRadius: '4px',
               color: '#ccc',
               fontSize: '11px',
-              padding: '3px 8px',
+              padding: '4px 8px',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
             }}
           >
-            {copied ? '✓ Copied' : 'Copy URL'}
+            {copied ? <Check size={12} color="#10b981" /> : <Copy size={12} />}
+            <span>{copied ? 'Copied' : 'Copy URL'}</span>
           </button>
         </div>
       )}
@@ -250,7 +276,8 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
                 gap: '6px',
               }}
             >
-              ↗ Open Website
+              <ExternalLink size={13} />
+              <span>Open Website</span>
             </a>
 
             <button
@@ -269,7 +296,8 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
                 gap: '6px',
               }}
             >
-              📱 Inspect Viewport
+              <MonitorSmartphone size={13} />
+              <span>Inspect Viewport</span>
             </button>
           </>
         )}
@@ -284,9 +312,13 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
             padding: '6px 12px',
             fontSize: '12px',
             cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
           }}
         >
-          📋 View Build Logs
+          <Terminal size={13} />
+          <span>View Build Logs</span>
         </button>
 
         <button
@@ -302,9 +334,13 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
             fontSize: '12px',
             fontWeight: 500,
             cursor: stopping ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
           }}
         >
-          {stopping ? 'Stopping...' : '🛑 Terminate & Clean VM'}
+          <Trash2 size={13} />
+          <span>{stopping ? 'Stopping...' : 'Terminate & Clean VM'}</span>
         </button>
       </div>
     </div>

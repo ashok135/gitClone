@@ -1,4 +1,5 @@
 import React from 'react';
+import { Rocket, Globe } from 'lucide-react';
 
 interface NavigationTabsProps {
   activeTab: 'deploy' | 'live';
@@ -39,7 +40,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
           transition: 'all 0.15s ease',
         }}
       >
-        <span>🚀</span>
+        <Rocket size={15} color={activeTab === 'deploy' ? '#fff' : '#888'} />
         <span>Import & Deploy</span>
       </button>
 
@@ -60,15 +61,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
           transition: 'all 0.15s ease',
         }}
       >
-        <span
-          style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            background: activeCount > 0 ? '#10b981' : '#6b7280',
-            boxShadow: activeCount > 0 ? '0 0 8px #10b981' : 'none',
-          }}
-        />
+        <Globe size={15} color={activeCount > 0 ? '#10b981' : '#6b7280'} />
         <span>Live Websites</span>
         <span
           style={{

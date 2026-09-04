@@ -1,5 +1,21 @@
 import { useState, useRef, useEffect } from 'react';
 import type { Repo } from './ImportRepo';
+import {
+  ExternalLink,
+  Clock,
+  Trash2,
+  Check,
+  Copy,
+  RotateCw,
+  Monitor,
+  Tablet,
+  Smartphone,
+  SlidersHorizontal,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  X,
+} from 'lucide-react';
 
 export interface DetectedEnv {
   file: string;
@@ -77,7 +93,7 @@ function StepRow({
               <polyline points="20 6 9 17 4 12" />
             </svg>
           ) : status === 'failed' ? (
-            <span style={{ fontSize: '11px', fontWeight: 'bold' }}>✕</span>
+            <X size={12} color="#f87171" />
           ) : status === 'active' ? (
             <div
               style={{
@@ -474,7 +490,7 @@ export function DeploymentProgress({
                 }
               >
                 <span>{sandboxUrl}</span>
-                <span style={{ fontSize: '12px' }}>↗</span>
+                <ExternalLink size={13} />
               </a>
             </div>
 
@@ -494,7 +510,7 @@ export function DeploymentProgress({
               }}
               title={expiresAt ? `Expires at ${new Date(expiresAt).toLocaleTimeString()}` : 'Auto-expires in 60 minutes to reclaim VM disk'}
             >
-              <span>⏳</span>
+              <Clock size={13} color="#4ade80" />
               <span>
                 {timeLeft
                   ? `Live · Expires in ${timeLeft}`
@@ -546,7 +562,8 @@ export function DeploymentProgress({
                     e.currentTarget.style.background = 'transparent';
                   }}
                 >
-                  🛑 Stop & Delete Sandbox
+                  <Trash2 size={13} style={{ display: 'inline', marginRight: '6px' }} />
+                  <span>Stop & Delete Sandbox</span>
                 </button>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -674,7 +691,15 @@ export function DeploymentProgress({
                 }}
                 title="Copy URL"
               >
-                {copiedUrl ? '✓ Copied' : 'Copy'}
+                {copiedUrl ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <Check size={11} color="#4ade80" /> Copied
+                  </span>
+                ) : (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <Copy size={11} /> Copy
+                  </span>
+                )}
               </button>
             </div>
 
@@ -695,7 +720,8 @@ export function DeploymentProgress({
                 }}
                 title="Refresh Sandbox View"
               >
-                🔄 Reload
+                <RotateCw size={12} style={{ display: 'inline', marginRight: '4px' }} />
+                <span>Reload</span>
               </button>
 
               {/* Viewport switcher */}
@@ -711,10 +737,14 @@ export function DeploymentProgress({
                     padding: '4px 8px',
                     fontSize: '11px',
                     cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
                   }}
                   title="Desktop View (100%)"
                 >
-                  🖥️ Desktop
+                  <Monitor size={12} />
+                  <span>Desktop</span>
                 </button>
                 <button
                   type="button"
@@ -727,10 +757,14 @@ export function DeploymentProgress({
                     padding: '4px 8px',
                     fontSize: '11px',
                     cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
                   }}
                   title="Tablet View (768px)"
                 >
-                  💻 Tablet
+                  <Tablet size={12} />
+                  <span>Tablet</span>
                 </button>
                 <button
                   type="button"
@@ -743,10 +777,14 @@ export function DeploymentProgress({
                     padding: '4px 8px',
                     fontSize: '11px',
                     cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
                   }}
                   title="Mobile View (375px)"
                 >
-                  📱 Mobile
+                  <Smartphone size={12} />
+                  <span>Mobile</span>
                 </button>
               </div>
 
@@ -768,7 +806,8 @@ export function DeploymentProgress({
                   textDecoration: 'none',
                 }}
               >
-                Open Tab ↗
+                <span>Open Tab</span>
+                <ExternalLink size={12} />
               </a>
             </div>
           </div>
@@ -831,7 +870,7 @@ export function DeploymentProgress({
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '16px' }}>⚙️</span>
+              <SlidersHorizontal size={15} color="#60a5fa" />
               <span style={{ fontSize: '13px', fontWeight: '700', color: '#fff' }}>
                 Environment & Runtime Configuration (.env)
               </span>
@@ -846,13 +885,18 @@ export function DeploymentProgress({
                   padding: '3px 8px',
                   borderRadius: '999px',
                   fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
                 }}
               >
-                ✓ {detectedEnv.keys.length} Variable(s) Configured
+                <CheckCircle2 size={12} />
+                <span>{detectedEnv.keys.length} Variable(s) Configured</span>
               </span>
             ) : (
-              <span style={{ fontSize: '11px', color: '#888' }}>
-                ✓ Self-contained build (No custom .env required)
+              <span style={{ fontSize: '11px', color: '#888', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <CheckCircle2 size={12} color="#888" />
+                <span>Self-contained build (No custom .env required)</span>
               </span>
             )}
           </div>
@@ -892,10 +936,13 @@ export function DeploymentProgress({
                       fontSize: '12px',
                       cursor: 'pointer',
                       padding: '0',
-                      textDecoration: 'underline',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
                     }}
                   >
-                    {showEnvTemplate ? 'Hide detected .env template ▲' : 'View detected .env template ▼'}
+                    <span>{showEnvTemplate ? 'Hide detected .env template' : 'View detected .env template'}</span>
+                    {showEnvTemplate ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                   </button>
                   {showEnvTemplate && (
                     <pre
@@ -939,7 +986,7 @@ export function DeploymentProgress({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '18px' }}>🧹</span>
+            <Trash2 size={18} color="#f87171" />
             <h4 style={{ margin: 0, fontSize: '15px', color: '#fff', fontWeight: '600' }}>
               {status === 'expired' ? 'Sandbox Auto-Expired' : 'Sandbox Terminated & Disk Cleaned'}
             </h4>
@@ -1004,8 +1051,9 @@ export function DeploymentProgress({
               Build & Runtime Logs ({logs.length})
             </span>
           </div>
-          <span style={{ fontSize: '11px', color: '#666' }}>
-            {showLogs ? 'Collapse ▲' : 'Expand ▼'}
+          <span style={{ fontSize: '11px', color: '#666', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span>{showLogs ? 'Collapse' : 'Expand'}</span>
+            {showLogs ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           </span>
         </div>
 
