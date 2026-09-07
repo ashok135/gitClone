@@ -1,21 +1,39 @@
-import { getApiUrl } from '../../config/api';
-import {type Repo } from '../../types/repo';
+import { getVerifiedApiUrl, LOCAL_BACKEND_URL, LIVE_BACKEND_URL } from '../../config/api';
+import { type Repo } from '../../types/repo';
 
 export class GithubApi {
   static async fetchUserRepos(token: string | null): Promise<Repo[]> {
     if (!token) return [];
-    const apiUrl = getApiUrl();
+    let apiUrl = await getVerifiedApiUrl();
 
     // Stage 1: Try backend proxy
     try {
-      const res = await fetch(`${apiUrl}/api/github/repos`, {
+      let res = await fetch(`${apiUrl}/api/github/repos`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      if (!res.ok && apiUrl === LOCAL_BACKEND_URL) {
+        // If local returned error or was down, try live
+        res = await fetch(`${LIVE_BACKEND_URL}/api/github/repos`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+
       if (res.ok) {
         return (await res.json()) as Repo[];
       }
     } catch {
-      // fallback
+      // If local server connection refused, try live backend before falling back to direct GitHub
+      if (apiUrl === LOCAL_BACKEND_URL) {
+        try {
+          const res = await fetch(`${LIVE_BACKEND_URL}/api/github/repos`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            return (await res.json()) as Repo[];
+          }
+        } catch {}
+      }
     }
 
     // Stage 2: Direct GitHub API fallback

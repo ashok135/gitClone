@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../store';
 import { setUser, setLoading, setError, logout as logoutAction } from '../store/slices/authSlice';
 import type { User } from '../types/auth';
-import { getApiUrl } from '../config/api';
+import { getVerifiedApiUrl, LOCAL_BACKEND_URL, LIVE_BACKEND_URL } from '../config/api';
 
 const GITHUB_CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID || "Ov23liwT45BuLxh6B0Df";
 
@@ -61,14 +61,32 @@ export function useAuth() {
         dispatch(setLoading(true));
         dispatch(setError(null));
         try {
-          const apiUrl = getApiUrl();
-          const response = await fetch(`${apiUrl}/api/auth/github`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ code }),
-          });
+          let apiUrl = await getVerifiedApiUrl();
+          let response: Response;
+
+          try {
+            response = await fetch(`${apiUrl}/api/auth/github`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ code }),
+            });
+          } catch (fetchErr) {
+            // If local backend failed, fallback to live backend
+            if (apiUrl === LOCAL_BACKEND_URL) {
+              apiUrl = LIVE_BACKEND_URL;
+              response = await fetch(`${apiUrl}/api/auth/github`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ code }),
+              });
+            } else {
+              throw fetchErr;
+            }
+          }
 
           const data = await response.json();
 
@@ -92,13 +110,13 @@ export function useAuth() {
     }
   }, [dispatch]);
 
-  const login = () => {
+  const login = async () => {
     if (GITHUB_CLIENT_ID === "your_github_client_id_here") {
       alert("Please configure VITE_GITHUB_CLIENT_ID in your frontend .env file!");
       return;
     }
     // Redirect through the backend redirect callback URL registered in GitHub Developer settings
-    const apiUrl = getApiUrl();
+    const apiUrl = await getVerifiedApiUrl();
     const redirectUri = `${apiUrl}/api/auth/github/callback`;
     window.location.href = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(
       redirectUri
