@@ -13,6 +13,7 @@ export const ViewportModal: React.FC<ViewportModalProps> = ({ url, onClose }) =>
 
   return (
     <div
+      className="viewport-modal-backdrop"
       style={{
         position: 'fixed',
         inset: 0,
@@ -27,6 +28,7 @@ export const ViewportModal: React.FC<ViewportModalProps> = ({ url, onClose }) =>
     >
       {/* Header */}
       <div
+        className="viewport-modal-header"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -41,6 +43,7 @@ export const ViewportModal: React.FC<ViewportModalProps> = ({ url, onClose }) =>
 
           {/* Device switcher */}
           <div
+            className="viewport-modal-device-switch"
             style={{
               display: 'flex',
               background: '#161616',

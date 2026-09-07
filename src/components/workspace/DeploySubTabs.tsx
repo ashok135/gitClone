@@ -9,6 +9,7 @@ interface DeploySubTabsProps {
 export const DeploySubTabs: React.FC<DeploySubTabsProps> = ({ mode, onSelectMode }) => {
   return (
     <div
+      className="deploy-subtabs-wrapper"
       style={{
         display: 'flex',
         alignItems: 'center',

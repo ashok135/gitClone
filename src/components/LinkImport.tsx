@@ -27,6 +27,7 @@ export function LinkImport({ customRepoUrl, onUrlChange, onImport }: LinkImportP
 
   return (
     <div
+      className="link-import-card"
       style={{
         borderRadius: '10px',
         border: '1px solid #1f1f1f',

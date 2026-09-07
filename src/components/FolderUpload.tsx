@@ -233,6 +233,7 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
 
   return (
     <div
+      className="folder-upload-card"
       style={{
         background: '#0d0d0d',
         border: '1px solid #222',
@@ -343,7 +344,7 @@ export const FolderUpload: React.FC<FolderUploadProps> = ({ onDeployFiles, isDep
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', marginTop: '6px', flexWrap: 'wrap', justifyContent: 'center' }} onClick={(e) => e.stopPropagation()}>
+        <div className="folder-upload-buttons-row" style={{ display: 'flex', gap: '10px', marginTop: '6px', flexWrap: 'wrap', justifyContent: 'center' }} onClick={(e) => e.stopPropagation()}>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}

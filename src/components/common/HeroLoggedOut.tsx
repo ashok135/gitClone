@@ -8,6 +8,7 @@ export const HeroLoggedOut: React.FC<HeroLoggedOutProps> = ({ onLogin }) => {
   return (
     <div style={{ textAlign: 'center', paddingTop: '80px' }}>
       <h1
+        className="hero-heading"
         style={{
           fontSize: '48px',
           fontWeight: '800',

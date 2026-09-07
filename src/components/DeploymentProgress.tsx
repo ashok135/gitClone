@@ -271,6 +271,7 @@ export function DeploymentProgress({
 
   return (
     <div
+      className="deployment-progress-card"
       style={{
         borderRadius: '12px',
         border: '1px solid #1f1f1f',
@@ -656,6 +657,7 @@ export function DeploymentProgress({
         >
           {/* Top Browser Chrome Bar */}
           <div
+            className="viewport-chrome-bar"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -679,6 +681,7 @@ export function DeploymentProgress({
 
             {/* Address Bar */}
             <div
+              className="viewport-address-bar"
               style={{
                 flex: '1',
                 maxWidth: '520px',
@@ -750,7 +753,10 @@ export function DeploymentProgress({
               </button>
 
               {/* Viewport switcher */}
-              <div style={{ display: 'flex', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '6px', padding: '2px' }}>
+              <div
+                className="viewport-device-switch"
+                style={{ display: 'flex', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '6px', padding: '2px' }}
+              >
                 <button
                   type="button"
                   onClick={() => setViewport('desktop')}
@@ -881,6 +887,7 @@ export function DeploymentProgress({
 
           {/* Iframe Viewport Area */}
           <div
+            className="viewport-frame-area"
             style={{
               width: '100%',
               minHeight: '620px',
@@ -893,6 +900,7 @@ export function DeploymentProgress({
             }}
           >
             <div
+              className="viewport-frame-wrapper"
               style={{
                 width: viewport === 'mobile' ? '375px' : viewport === 'tablet' ? '768px' : '100%',
                 maxWidth: '100%',

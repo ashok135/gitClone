@@ -75,6 +75,7 @@ export const LiveWebsitesTab: React.FC<LiveWebsitesTabProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header bar */}
       <div
+        className="live-header-bar"
         style={{
           display: 'flex',
           justifyContent: 'space-between',

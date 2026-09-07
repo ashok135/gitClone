@@ -12,13 +12,13 @@ export function Navbar({ user, onLogin, onLogout }: NavbarProps) {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-zinc-200/50 dark:border-zinc-800/50 bg-black backdrop-blur-md transition-colors duration-300">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
         
         {/* Left Side: Brand Logo */}
         <div className="flex items-center">
           <img
             src={logoImg}
-            className="h-35 w-auto object-contain transition-transform duration-300 hover:scale-105"
+            className="h-9 sm:h-11 w-auto object-contain transition-transform duration-300 hover:scale-105"
             alt="gitClone Logo"
           />
         </div>

@@ -123,7 +123,7 @@ export function ImportRepo({
         </h3>
       </div>
 
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '0', alignItems: 'center' }}>
+      <div className="import-search-bar-row">
         <div
           style={{
             display: 'flex',
@@ -236,14 +236,7 @@ export function ImportRepo({
                   }}
                 >
                   <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '14px 18px',
-                      transition: 'background 0.15s',
-                      cursor: 'default',
-                    }}
+                    className="import-repo-row"
                     onMouseEnter={(e) =>
                       ((e.currentTarget as HTMLDivElement).style.background = '#111')
                     }
@@ -299,7 +292,7 @@ export function ImportRepo({
                     </div>
                   </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="import-repo-actions">
                       <button
                         type="button"
                         onClick={() =>

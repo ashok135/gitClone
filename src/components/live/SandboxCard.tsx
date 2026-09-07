@@ -72,6 +72,7 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
 
   return (
     <div
+      className="sandbox-card"
       style={{
         background: '#0d0d0d',
         border: '1px solid #222',
@@ -313,6 +314,7 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
 
       {/* Action buttons */}
       <div
+        className="sandbox-card-actions"
         style={{
           display: 'flex',
           gap: '8px',

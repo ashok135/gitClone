@@ -111,28 +111,11 @@ function App() {
       {loading ? (
         <LoadingScreen />
       ) : (
-        <main
-          style={{
-            maxWidth: '1280px',
-            margin: '0 auto',
-            padding: '32px 24px',
-            boxSizing: 'border-box',
-          }}
-        >
+        <main className="main-container">
           {user ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
               {/* Workspace Header & Top-level Navigation */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: '16px',
-                  paddingBottom: '20px',
-                  borderBottom: '1px solid #1a1a1a',
-                }}
-              >
+              <div className="workspace-top-bar">
                 <WorkspaceHeader user={user} />
                 <NavigationTabs
                   activeTab={mainTab}
@@ -264,14 +247,7 @@ function App() {
                   <DeploySubTabs mode={deployMode} onSelectMode={setDeployMode} />
 
                   {deployMode === 'git' ? (
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 320px',
-                        gap: '24px',
-                        alignItems: 'start',
-                      }}
-                    >
+                    <div className="deploy-git-grid">
                       <ImportRepo
                         user={user}
                         repos={repos}

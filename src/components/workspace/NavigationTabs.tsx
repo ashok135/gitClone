@@ -14,6 +14,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
 }) => {
   return (
     <div
+      className="nav-tabs-wrapper"
       style={{
         display: 'flex',
         background: '#101010',
