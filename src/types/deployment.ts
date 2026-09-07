@@ -6,6 +6,7 @@ export interface ActiveDeployment {
   step: number;
   status: string;
   url?: string;
+  port?: number;
   error?: string;
   logs: string[];
   expiresAt?: string;

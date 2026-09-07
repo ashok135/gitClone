@@ -30,6 +30,7 @@ export function useActiveDeployment({ onSandboxUpdate }: UseActiveDeploymentOpti
           step: data.step !== undefined ? data.step : prev.step,
           status: data.status || prev.status,
           url: data.url !== undefined ? data.url : prev.url,
+          port: data.port !== undefined ? data.port : prev.port,
           error: data.error || prev.error,
           logs:
             data.logs && data.logs.length > (prev.logs?.length || 0)
@@ -293,6 +294,7 @@ export function useActiveDeployment({ onSandboxUpdate }: UseActiveDeploymentOpti
       step: sandbox.step || (sandbox.status === 'live' ? 4 : 1),
       status: sandbox.status,
       url: sandbox.url || undefined,
+      port: sandbox.port,
       logs: sandbox.logs || [`[Info] Connected to logs for sandbox ${sandbox.id}`],
       expiresAt: sandbox.expiresAt,
       detectedEnv: sandbox.detectedEnv,

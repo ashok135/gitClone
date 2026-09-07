@@ -35,7 +35,7 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
   const getPublicUrl = (): string | null => {
     let target = sandbox.url;
     if (!target && sandbox.port) {
-      target = `http://129.225.66.172:${sandbox.port}`;
+      return `http://129.225.66.172:${sandbox.port}`;
     }
     if (target) {
       try {
@@ -43,14 +43,15 @@ export const SandboxCard: React.FC<SandboxCardProps> = ({
         if (
           parsed.hostname === 'localhost' ||
           parsed.hostname === '127.0.0.1' ||
-          parsed.hostname.includes('vercel.app')
+          parsed.hostname.includes('vercel.app') ||
+          parsed.hostname.includes('trycloudflare.com')
         ) {
-          return `http://129.225.66.172:${parsed.port || sandbox.port || 4001}`;
+          return `http://129.225.66.172:${sandbox.port || parsed.port || 4001}`;
         }
         return target;
       } catch {}
     }
-    return target || null;
+    return sandbox.port ? `http://129.225.66.172:${sandbox.port}` : target || null;
   };
 
   const liveUrl = getPublicUrl();

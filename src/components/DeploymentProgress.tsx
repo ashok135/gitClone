@@ -30,6 +30,7 @@ export interface DeploymentProgressProps {
   onBack: () => void;
   logs?: string[];
   url?: string;
+  port?: number;
   error?: string;
   expiresAt?: string;
   detectedEnv?: DetectedEnv;
@@ -168,6 +169,7 @@ export function DeploymentProgress({
   onBack,
   logs = [],
   url,
+  port,
   error,
   expiresAt,
   detectedEnv,
@@ -228,6 +230,9 @@ export function DeploymentProgress({
   };
 
   const formatLiveUrl = (rawUrl?: string): string => {
+    if (!rawUrl && port) {
+      return `http://129.225.66.172:${port}`;
+    }
     if (!rawUrl) {
       return '';
     }
@@ -241,16 +246,25 @@ export function DeploymentProgress({
     }
     try {
       const parsed = new URL(cleaned);
+      const queryPort = parsed.searchParams.get('_port') || parsed.searchParams.get('port');
+      const resolvedPort = port || (queryPort ? parseInt(queryPort, 10) : undefined) || (parsed.port ? parseInt(parsed.port, 10) : undefined);
+
       if (
+        parsed.hostname.includes('trycloudflare.com') ||
         parsed.hostname === 'localhost' ||
         parsed.hostname === '127.0.0.1' ||
         parsed.hostname.includes('vercel.app')
       ) {
         parsed.hostname = '129.225.66.172';
+        parsed.protocol = 'http:';
+        parsed.port = resolvedPort ? String(resolvedPort) : '4001';
+        parsed.search = '';
         return parsed.toString();
       }
-    } catch {}
-    return cleaned;
+      return parsed.toString();
+    } catch {
+      return port ? `http://129.225.66.172:${port}` : cleaned;
+    }
   };
 
   const sandboxUrl = formatLiveUrl(url);

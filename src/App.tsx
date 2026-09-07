@@ -174,6 +174,7 @@ function App() {
                     step={activeDeployment.step}
                     status={activeDeployment.status}
                     url={activeDeployment.url}
+                    port={activeDeployment.port}
                     logs={activeDeployment.logs}
                     error={activeDeployment.error}
                     expiresAt={activeDeployment.expiresAt}
